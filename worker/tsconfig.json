@@ -1,0 +1,17 @@
+{
+  // Worker（/api/*）與其測試的型別檢查：npx tsc --noEmit -p worker
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node", "vite/client"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "noUncheckedIndexedAccess": false
+  },
+  "include": ["./**/*.ts", "../src/lib/pricing*.ts", "../src/lib/entitlement*.ts"]
+}
