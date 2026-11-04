@@ -8,7 +8,7 @@ import { balancedPositions, buildRequest } from "./prompt.js";
 import { officialOverlap } from "./similarity.js";
 import { isVariantId, writeJsonAtomic } from "./store.js";
 import { getSubject, subjectItems } from "./syllabus.js";
-import type { Question, RawQuestion, Syllabus, Usage } from "./types.js";
+import type { Question, RawQuestion, SubjectNo, Syllabus, Usage } from "./types.js";
 
 export interface ItemSummary { code: string; target: number; before: number; added: number; dropped: number; rounds: number }
 export interface GenerationResult { perItem: ItemSummary[]; usage: Usage; shortfall: number; total: number }
@@ -16,7 +16,7 @@ export interface GenerationResult { perItem: ItemSummary[]; usage: Usage; shortf
 export interface GenerationOptions {
   client: any; // Anthropic SDK client (only client.beta.messages.stream is used)
   syllabus: Syllabus;
-  subject: 1 | 2 | 3;
+  subject: SubjectNo;
   total: number;
   outFile: string;
   concurrency?: number;

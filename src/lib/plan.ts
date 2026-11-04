@@ -1,5 +1,6 @@
 import { daysUntil } from './timer';
 import { applyResults, wrongBookIds } from './wrongbook';
+import { fullFirstOf } from './levels';
 import type { Question, QuestionStat, Session, Subject } from './types';
 import type { WeaknessRow } from './weakness';
 
@@ -110,7 +111,8 @@ export function buildPlan(i: PlanInput): PlanDay[] {
   const fullParts = new Map<string, Session[]>();
   for (const s of i.history) if (s.mode === 'full' && s.fullId) fullParts.set(s.fullId, [...(fullParts.get(s.fullId) ?? []), s]);
   for (const parts of fullParts.values()) {
-    if (parts.some((s) => s.subject === 1) && parts.some((s) => s.subject !== 1)) {
+    const first = fullFirstOf(parts[0]!.subject); // 初級 or 中級: both sections share the level
+    if (parts.some((s) => s.subject === first) && parts.some((s) => s.subject !== first)) {
       fullDoneDays.add(dayKey(new Date(Math.max(...parts.map((s) => Date.parse(s.submittedAt))))));
     }
   }

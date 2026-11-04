@@ -1,3 +1,4 @@
+import { isSubject, levelOf } from './levels';
 import type { ActiveSession, AppState, FullExam, QuestionStat, Session } from './types';
 
 export const STORAGE_KEY = 'ipas.v1';
@@ -13,7 +14,6 @@ const isDate = (x: unknown): x is string => typeof x === 'string' && !Number.isN
 const isStrArr = (x: unknown): x is string[] => Array.isArray(x) && x.every((v) => typeof v === 'string');
 const isAnswer = (v: unknown) => v === null || (isInt(v) && (v as number) >= 0 && (v as number) <= 3);
 const isAnswers = (x: unknown): x is (number | null)[] => Array.isArray(x) && x.every(isAnswer);
-const SUBJECTS = [1, 2, 3];
 const MODES = ['practice', 'exam', 'full', 'redo'];
 const SOURCES = ['all', 'official', 'original'];
 
@@ -22,13 +22,14 @@ export function sessionError(x: unknown): string | null {
   if (!isObj(x)) return '不是物件';
   if (typeof x.id !== 'string' || !x.id) return '缺少 id';
   if (!MODES.includes(x.mode as string)) return 'mode 無效';
-  if (!SUBJECTS.includes(x.subject as number)) return 'subject 無效';
+  if (!isSubject(x.subject)) return 'subject 無效';
   if (!isDate(x.startedAt) || !isDate(x.submittedAt)) return '時間格式無效';
   if (!isStrArr(x.questionIds)) return 'questionIds 無效';
   if (!isAnswers(x.answers)) return 'answers 必須是 0 到 3 的整數或 null';
   if (x.answers.length !== x.questionIds.length) return 'answers 與 questionIds 數量不一致';
   if (!isInt(x.score) || x.score < 0 || x.score > 100) return 'score 必須是 0 到 100 的整數';
   if (x.fullId !== undefined && typeof x.fullId !== 'string') return 'fullId 無效';
+  if (x.paperId !== undefined && typeof x.paperId !== 'string') return 'paperId 無效';
   return null;
 }
 
@@ -45,12 +46,12 @@ const isSession = (x: unknown): x is Session => sessionError(x) === null;
 const isStat = (x: unknown): x is QuestionStat => statError(x) === null;
 
 const isActive = (x: unknown): x is ActiveSession =>
-  isObj(x) && typeof x.id === 'string' && MODES.includes(x.mode as string) && SUBJECTS.includes(x.subject as number) &&
+  isObj(x) && typeof x.id === 'string' && MODES.includes(x.mode as string) && isSubject(x.subject) &&
   isNum(x.startedAt) && (x.deadline === null || isNum(x.deadline)) && isStrArr(x.questionIds) && isAnswers(x.answers) &&
   x.answers.length === x.questionIds.length && Array.isArray(x.flagged) && x.flagged.length === x.questionIds.length;
 
 const isFull = (x: unknown): x is FullExam =>
-  isObj(x) && typeof x.id === 'string' && (x.elective === 2 || x.elective === 3) &&
+  isObj(x) && typeof x.id === 'string' && (x.elective === 2 || x.elective === 3 || x.elective === 12) &&
   ['section1', 'break', 'section2', 'done'].includes(x.stage as string) && (x.breakDeadline === null || isNum(x.breakDeadline)) &&
   (x.source === undefined || SOURCES.includes(x.source as string));
 

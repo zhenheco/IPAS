@@ -47,7 +47,7 @@ export async function checkFiles(dir: string, syllabus: Syllabus, source: Questi
       validator = new QuestionValidator(syllabus, [], source);
       if (data.length !== 50) errors.push(`${file}: ${data.length} questions, expected 50`);
     }
-    const forced = /(?:^subject-|-s)(\d)\.json$/.exec(file)?.[1];
+    const forced = /(?:^subject-|-s)(\d+)\.json$/.exec(file)?.[1];
     data.forEach((q, i) => {
       const bad = validator.check(q, forced ? Number(forced) : undefined);
       if (bad.length) errors.push(`${file}[${i}] ${(q as any)?.id ?? "?"}: ${bad.join("; ")}`);

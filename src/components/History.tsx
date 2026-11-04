@@ -1,4 +1,6 @@
 import { MODE_LABEL } from '../config';
+import { subjectLabel } from '../lib/levels';
+import { isPassed } from '../lib/scoring';
 import { Badge, Loading, fmtDate, useApp, useBank } from './app';
 
 export default function History() {
@@ -18,8 +20,8 @@ export default function History() {
                 <tr key={s.id}>
                   <td>{fmtDate(s.submittedAt)}</td>
                   <td>{MODE_LABEL[s.mode]}</td>
-                  <td>科目{s.subject}</td>
-                  <td>{s.score} <Badge passed={s.score >= 70} /></td>
+                  <td>{subjectLabel(s.subject)}</td>
+                  <td>{s.score} <Badge passed={isPassed(s.score, s.subject)} /></td>
                   <td>{Math.max(1, Math.round((Date.parse(s.submittedAt) - Date.parse(s.startedAt)) / 60_000))} 分</td>
                   <td><a href={`/result/?id=${s.id}`}>檢討</a></td>
                 </tr>

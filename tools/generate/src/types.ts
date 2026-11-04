@@ -1,6 +1,10 @@
 export interface SyllabusItem { code: string; name: string }
 export interface SyllabusTopic { code: string; name: string; items: SyllabusItem[] }
-export interface SyllabusSubject { subject: 1 | 2 | 3; code: string; name: string; topics: SyllabusTopic[] }
+/** 中級 1-3 (L21-L23), 初級 11-12 (L11-L12) */
+export type SubjectNo = 1 | 2 | 3 | 11 | 12;
+export const SUBJECT_NOS: readonly SubjectNo[] = [1, 2, 3, 11, 12];
+
+export interface SyllabusSubject { subject: SubjectNo; code: string; name: string; topics: SyllabusTopic[] }
 export interface Syllabus { subjects: SyllabusSubject[] }
 
 /** 知識點 flattened with its 評鑑主題, in syllabus order. */
@@ -8,7 +12,7 @@ export interface ItemRef { code: string; name: string; topicCode: string; topicN
 
 export interface Question {
   id: string;
-  subject: 1 | 2 | 3;
+  subject: SubjectNo;
   item: string;
   stem: string;
   options: [string, string, string, string];

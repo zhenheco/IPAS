@@ -1,5 +1,7 @@
 import { useState } from 'preact/hooks';
-import { QUESTIONS_PER_SESSION, SUBJECT_NAMES } from '../config';
+import { QUESTIONS_PER_SESSION } from '../config';
+import { SUBJECT_INFO, levelOf, subjectLabel } from '../lib/levels';
+import Paywall from './Paywall';
 import { itemName } from '../lib/syllabus';
 import { firstSubjectWithData } from '../lib/subjects';
 import type { Subject } from '../lib/types';
@@ -32,14 +34,15 @@ export default function WrongBook() {
       <div class="tabs" role="tablist">
         {bank.subjects.map((s) => (
           <button key={s} role="tab" aria-selected={s === subject} class={s === subject ? 'on' : ''} onClick={() => setSubject(s)}>
-            科目{s}（{wrongBookIds(stats, bank.byId, s).length}）
+            {subjectLabel(s)}（{wrongBookIds(stats, bank.byId, s).length}）
           </button>
         ))}
       </div>
-      <p class="muted">{SUBJECT_NAMES[subject]}</p>
+      <p class="muted">{SUBJECT_INFO[subject].name}</p>
+      <Paywall feature="wrongbook" level={levelOf(subject)}>
 
       {ids.length === 0 ? (
-        <p class="notice">科目{subject}的錯題本是空的。</p>
+        <p class="notice">{subjectLabel(subject)}的錯題本是空的。</p>
       ) : (
         <>
           <button class="btn" onClick={redo}>錯題重做（{Math.min(ids.length, QUESTIONS_PER_SESSION)} 題）</button>
@@ -59,6 +62,7 @@ export default function WrongBook() {
           ))}
         </>
       )}
+      </Paywall>
     </>
   );
 }

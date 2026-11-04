@@ -1,0 +1,20 @@
+# 複製為 .dev.vars 供 `wrangler dev -c wrangler.app.jsonc` 使用（.dev.vars 不可提交）。
+# 正式環境以 `npx wrangler secret put <NAME> -c wrangler.app.jsonc` 設定下列秘密。
+
+# Better Auth：至少 32 字元隨機字串（openssl rand -base64 32）
+BETTER_AUTH_SECRET=
+# 本機開發覆寫 vars 中的網址
+BETTER_AUTH_URL=http://localhost:8787
+
+# Google OAuth（Google Cloud Console → 憑證 → OAuth 用戶端 ID；重新導向 URI：{BETTER_AUTH_URL}/api/auth/callback/google）
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# PAYUNi 商店資訊（PAYUNi 商店後台 → 串接設定）
+PAYUNI_MER_ID=
+PAYUNI_HASH_KEY=
+PAYUNI_HASH_IV=
+
+# Resend（EMAIL_PROVIDER=resend 時需要；本機可設 EMAIL_PROVIDER=console 改印在終端機）
+RESEND_API_KEY=
+EMAIL_PROVIDER=console

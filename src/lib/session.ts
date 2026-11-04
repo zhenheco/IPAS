@@ -2,16 +2,17 @@ import { SOURCE_LABEL } from '../config';
 import type { ActiveSession, AppState, FullExam, Mode, Question, QuestionStat, Session, Subject } from './types';
 import { afterSectionSubmit, endBreak } from './fullexam';
 import { scoreAnswers } from './scoring';
+import { examCapMs, subjectLabel } from './levels';
 import { filterBySource } from './source';
 import { filterPool } from './syllabus';
-import { EXAM_CAP_MS, deadlineFor, effectiveSubmitAt, shouldAutoSubmit } from './timer';
+import { deadlineFor, effectiveSubmitAt, shouldAutoSubmit } from './timer';
 import { applyResults } from './wrongbook';
 
 export const EXAM_MIN_QUESTIONS = 50;
 
 /** 單科模考 and 全真模考 need a full pool; returns the reason to block starting, or null. */
 export const examBlock = (subject: Subject, count: number, sourceLabel?: string) =>
-  count >= EXAM_MIN_QUESTIONS ? null : `科目${subject}目前題庫${sourceLabel ? `（${sourceLabel}）` : ''}只有 ${count} 題，需要至少 ${EXAM_MIN_QUESTIONS} 題才能開始。`;
+  count >= EXAM_MIN_QUESTIONS ? null : `${subjectLabel(subject)}目前題庫${sourceLabel ? `（${sourceLabel}）` : ''}只有 ${count} 題，需要至少 ${EXAM_MIN_QUESTIONS} 題才能開始。`;
 
 /** Section 2's pool, rechecked when it starts: the bank or 題目來源 may no longer hold 50 題 for the chosen elective. */
 export function section2Pool(questions: Question[], exam: FullExam) {
@@ -26,18 +27,19 @@ export function section2Action(questions: Question[], exam: FullExam, now: numbe
   return section2Pool(questions, exam).block ? 'blocked' : 'start';
 }
 
-export function createSession(o: { id: string; mode: Mode; subject: Subject; questions: Question[]; now: number; fullId?: string }): ActiveSession {
+export function createSession(o: { id: string; mode: Mode; subject: Subject; questions: Question[]; now: number; fullId?: string; paperId?: string }): ActiveSession {
   const n = o.questions.length;
   return {
     id: o.id,
     mode: o.mode,
     subject: o.subject,
     startedAt: o.now,
-    deadline: o.mode === 'exam' || o.mode === 'full' ? deadlineFor(o.now, EXAM_CAP_MS) : null,
+    deadline: o.mode === 'exam' || o.mode === 'full' ? deadlineFor(o.now, examCapMs(o.subject)) : null,
     questionIds: o.questions.map((q) => q.id),
     answers: Array(n).fill(null),
     flagged: Array(n).fill(false),
     ...(o.fullId ? { fullId: o.fullId } : {}),
+    ...(o.paperId ? { paperId: o.paperId } : {}),
   };
 }
 
@@ -64,6 +66,7 @@ export function submitSession(a: ActiveSession, byId: Record<string, Question>, 
     startedAt: new Date(a.startedAt).toISOString(), submittedAt: iso,
     questionIds: a.questionIds, answers: a.answers, score,
     ...(a.fullId ? { fullId: a.fullId } : {}),
+    ...(a.paperId ? { paperId: a.paperId } : {}),
   };
   // questions no longer in the bank are skipped; a blank answer counts as wrong
   const results = qs.flatMap((q, i) => (q ? [{ questionId: q.id, correct: a.answers[i] === q.answer }] : []));

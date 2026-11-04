@@ -4,9 +4,12 @@ import { syllabus } from "./helpers.js";
 
 describe("syllabus.json", () => {
   const s = syllabus();
-  it("has the 34 official 知識點 over 3 subjects", () => {
-    expect(s.subjects.map((x) => x.code)).toEqual(["L21", "L22", "L23"]);
-    expect(s.subjects.flatMap((x) => subjectItems(x)).length).toBe(34);
+  it("has the 34 中級 知識點 over 3 subjects and the 16 初級 知識點 over 2", () => {
+    expect(s.subjects.map((x) => x.code)).toEqual(["L21", "L22", "L23", "L11", "L12"]);
+    const count = (codes: string[]) => s.subjects.filter((x) => codes.includes(x.code)).flatMap((x) => subjectItems(x)).length;
+    expect(count(["L21", "L22", "L23"])).toBe(34);
+    expect(count(["L11", "L12"])).toBe(16);
+    for (const x of s.subjects) for (const i of subjectItems(x)) expect(i.code.startsWith(x.code)).toBe(true);
   });
   it("lists subject 3 items in order with their topic", () => {
     const items = subjectItems(getSubject(s, 3));

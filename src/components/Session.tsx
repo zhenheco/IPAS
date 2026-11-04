@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { MODE_LABEL } from '../config';
+import { subjectLabel } from '../lib/levels';
 import { applyEdit, applySubmit, type Edit } from '../lib/session';
 import { exportJson } from '../lib/storage';
 import type { Session as SessionRecord } from '../lib/types';
@@ -95,7 +96,7 @@ export default function Session() {
     <>
       <SaveWarning ok={saveOk} />
       <div class="bar">
-        <b>{MODE_LABEL[active.mode]} · 科目{active.subject}</b>
+        <b>{MODE_LABEL[active.mode]} · {subjectLabel(active.subject)}</b>
         <span class="muted">已答 {qs.length - blanks}/{qs.length}</span>
         {timed ? <span class={`clock ${remainingMs(active.deadline!, now) < 300_000 ? 'low' : ''}`} role="timer">{formatClock(remainingMs(active.deadline!, now))}</span> : null}
         <button class="btn small" onClick={confirmSubmit}>交卷</button>

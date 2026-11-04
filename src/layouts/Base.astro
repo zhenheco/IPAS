@@ -5,6 +5,8 @@ const nav = [
   ['/', '首頁'], ['/plan/', '讀書計畫'], ['/practice/', '練習'], ['/exam/', '單科模考'], ['/full/', '全真模考'],
   ['/wrongbook/', '錯題本'], ['/weakness/', '弱點分析'], ['/history/', '作答歷史'], ['/settings/', '設定'],
 ];
+// 價目與帳號 appear only once the owner builds with PUBLIC_PAYWALL_ENABLED=1
+if (import.meta.env.PUBLIC_PAYWALL_ENABLED === '1') nav.push(['/pricing/', '價目'], ['/account/', '帳號']);
 const path = Astro.url.pathname;
 ---
 <!doctype html>
@@ -17,7 +19,7 @@ const path = Astro.url.pathname;
   </head>
   <body>
     <header class="top">
-      <a class="brand" href="/">iPAS AI 應用規劃師 · 中級</a>
+      <a class="brand" href="/">iPAS AI 應用規劃師 · 初級／中級</a>
       <nav aria-label="主選單">
         {nav.map(([href, label]) => <a href={href} aria-current={path === href ? 'page' : undefined}>{label}</a>)}
       </nav>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
-import { DEFAULT_SUBJECTS } from '../config';
+import { DEFAULT_LEVEL, DEFAULT_SUBJECTS } from '../config';
+import { ALL_SUBJECTS, LEVELS, LEVEL_ORDER, isLevel, isSubject, levelOf, type Level } from '../lib/levels';
 import { STORAGE_KEY, emptyState, loadState, updateState, withLock } from '../lib/storage';
 import type { AppState, Bank, Question, Subject } from '../lib/types';
 
@@ -57,13 +58,53 @@ export function useBank() {
     if (!bank) return null;
     const byId: Record<string, Question> = Object.fromEntries(bank.questions.map((q) => [q.id, q]));
     const count = (s: Subject) => bank.questions.filter((q) => q.subject === s).length;
-    const subjects = ([1, 2, 3] as Subject[]).filter((s) => DEFAULT_SUBJECTS.includes(s) || count(s) > 0);
-    return { ...bank, byId, count, subjects };
+    const subjects = ALL_SUBJECTS.filter((s) => DEFAULT_SUBJECTS.includes(s) || count(s) > 0);
+    const levels = LEVEL_ORDER.filter((l) => subjects.some((s) => levelOf(s) === l));
+    const subjectsOf = (l: Level) => subjects.filter((s) => levelOf(s) === l);
+    const papersOf = (s: Subject) => (bank.papers ?? []).filter((p) => p.subject === s).sort((a, b) => a.no - b.no);
+    return { ...bank, byId, count, subjects, levels, subjectsOf, papersOf };
   }, [bank]);
   return { bank: derived, error };
 }
 
 export type LoadedBank = NonNullable<ReturnType<typeof useBank>['bank']>;
+
+const LEVEL_KEY = 'ipas.level';
+
+/**
+ * The level (初級/中級) being viewed: ?level= or ?subject= in the URL, else the last one picked on this device.
+ * Remembering it is a per-viewer convenience only, so storage errors are ignored.
+ */
+export function useLevel(available: Level[] | undefined) {
+  const [picked, setPicked] = useState<Level | null>(null);
+  useEffect(() => {
+    const q = query();
+    const fromUrl = q.get('level');
+    const s = Number(q.get('subject'));
+    let stored: string | null = null;
+    try { stored = localStorage.getItem(LEVEL_KEY); } catch { /* ignore */ }
+    const l = isLevel(fromUrl) ? fromUrl : isSubject(s) ? levelOf(s) : isLevel(stored) ? stored : null;
+    if (l) setPicked(l);
+  }, []);
+  const set = (l: Level) => {
+    setPicked(l);
+    try { localStorage.setItem(LEVEL_KEY, l); } catch { /* ignore */ }
+  };
+  const list = available?.length ? available : [DEFAULT_LEVEL];
+  const level = picked && list.includes(picked) ? picked : list.includes(DEFAULT_LEVEL) ? DEFAULT_LEVEL : list[0]!;
+  return { level, setLevel: set };
+}
+
+export function LevelTabs({ levels, level, onPick }: { levels: Level[]; level: Level; onPick: (l: Level) => void }) {
+  if (levels.length < 2) return null;
+  return (
+    <div class="tabs" role="tablist" aria-label="級別">
+      {levels.map((l) => (
+        <button key={l} role="tab" aria-selected={l === level} class={l === level ? 'on' : ''} onClick={() => onPick(l)}>{LEVELS[l].name}</button>
+      ))}
+    </div>
+  );
+}
 
 export const newId = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 export const go = (url: string) => { location.href = url; };

@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { loadOfficial, requireExemplars } from "./exemplars.js";
 import { runGeneration, type GenerationResult } from "./generate.js";
 import { loadSyllabus } from "./syllabus.js";
+import { SUBJECT_NOS, type SubjectNo } from "./types.js";
 import { runVariants } from "./variants.js";
 
 export function requireApiKey(env: Record<string, string | undefined>): string {
@@ -13,7 +14,7 @@ export function requireApiKey(env: Record<string, string | undefined>): string {
 }
 
 export interface Args {
-  subject: 1 | 2 | 3;
+  subject: SubjectNo;
   /** per-item quota mode: total questions for the subject */
   total?: number;
   /** variants mode: original variants per official question (separate quota, see variants.ts) */
@@ -34,11 +35,12 @@ export function parseArgs(argv: string[]): Args {
     return Number(raw);
   };
   const subject = int("subject");
-  if (subject > 3) throw new Error("--subject must be 1, 2 or 3");
+  if (!SUBJECT_NOS.includes(subject as SubjectNo)) throw new Error("--subject must be 1, 2, 3 (中級) or 11, 12 (初級)");
   if (v.total !== undefined && v.variants !== undefined) throw new Error("use either --total or --variants, not both");
   if (v.total === undefined && v.variants === undefined) throw new Error("--total or --variants is required");
+  if (v.variants !== undefined && subject > 3) throw new Error("--variants needs official questions, which exist only for 中級 (1, 2, 3)");
   return {
-    subject: subject as 1 | 2 | 3,
+    subject: subject as SubjectNo,
     ...(v.variants === undefined ? { total: int("total") } : { variants: int("variants") }),
     concurrency: int("concurrency", 4),
   };
@@ -66,7 +68,7 @@ async function main() {
   if (args.variants !== undefined) {
     if (!official.length) throw new Error(`no official questions for subject ${args.subject} in data/official; run import-official first`);
     const r = await runVariants({
-      client, syllabus, subject: args.subject, official, perQuestion: args.variants, concurrency: args.concurrency, outFile,
+      client, syllabus, subject: args.subject as 1 | 2 | 3, official, perQuestion: args.variants, concurrency: args.concurrency, outFile,
       progressFile: path.join(root, "questions", ".variants-progress.json"), log: console.log,
     });
     console.log(`\nvariants: ${r.target - r.shortfall}/${r.target} (new ${r.added}, dropped ${r.dropped})`);
@@ -75,8 +77,10 @@ async function main() {
     process.exitCode = r.shortfall ? 1 : 0;
     return;
   }
-  const exemplars = requireExemplars(official, syllabus, args.subject);
-  console.log(`calibrating against ${exemplars.length} official question(s) of subject ${args.subject}`);
+  // 初級 has no imported official questions yet: generate uncalibrated until some are imported
+  const uncalibrated = args.subject > 3 && !official.some((q) => q.subject === args.subject);
+  const exemplars = uncalibrated ? [] : requireExemplars(official, syllabus, args.subject);
+  console.log(uncalibrated ? `no official questions for 初級 subject ${args.subject}: generating without calibration` : `calibrating against ${exemplars.length} official question(s) of subject ${args.subject}`);
   const result = await runGeneration({
     client, syllabus, subject: args.subject, total: args.total!, concurrency: args.concurrency, outFile, official: exemplars, log: console.log,
   });

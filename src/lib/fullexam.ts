@@ -1,7 +1,7 @@
-import type { FullExam, SourceChoice } from './types';
+import type { FullExam, SourceChoice, Subject } from './types';
 import { BREAK_CAP_MS, section2StartAt } from './timer';
 
-export const startFull = (id: string, elective: 2 | 3, source: SourceChoice = 'all'): FullExam =>
+export const startFull = (id: string, elective: Subject, source: SourceChoice = 'all'): FullExam =>
   ({ id, elective, stage: 'section1', breakDeadline: null, ...(source === 'all' ? {} : { source }) });
 
 export function afterSectionSubmit(s: FullExam, now: number): FullExam {
