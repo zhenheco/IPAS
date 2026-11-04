@@ -57,27 +57,31 @@ const fromB64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 
 const TAG_BYTES = 16;
 
-function checkKeys(hashKey: string, hashIV: string) {
+/** 官方範例對金鑰與 IV 先 trim() 再使用（HashInfo 則用未 trim 的原值） */
+function keyBytes(hashKey: string, hashIV: string) {
   // 待以 PAYUNi 官方文件確認：HashKey 為 32 字元、HashIV 為 16 字元，直接以 UTF-8 位元組作為金鑰與 IV
-  if (enc.encode(hashKey).length !== 32) throw new Error('PAYUNI_HASH_KEY 必須為 32 位元組');
-  if (enc.encode(hashIV).length !== 16) throw new Error('PAYUNI_HASH_IV 必須為 16 位元組');
+  const key = enc.encode(hashKey.trim());
+  const iv = enc.encode(hashIV.trim());
+  if (key.length !== 32) throw new Error('PAYUNI_HASH_KEY 必須為 32 位元組');
+  if (iv.length !== 16) throw new Error('PAYUNI_HASH_IV 必須為 16 位元組');
+  return { key, iv };
 }
 
-const importKey = (hashKey: string, usage: KeyUsage) =>
-  crypto.subtle.importKey('raw', enc.encode(hashKey), { name: 'AES-GCM' }, false, [usage]);
+const importKey = (key: Uint8Array, usage: KeyUsage) =>
+  crypto.subtle.importKey('raw', key as BufferSource, { name: 'AES-GCM' }, false, [usage]);
 
 export async function encryptInfo(params: Record<string, string | number>, hashKey: string, hashIV: string): Promise<string> {
-  checkKeys(hashKey, hashIV);
-  const key = await importKey(hashKey, 'encrypt');
+  const k = keyBytes(hashKey, hashIV);
+  const key = await importKey(k.key, 'encrypt');
   // WebCrypto 的 AES-GCM 輸出為「密文 || 16 位元組 tag」
-  const out = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: enc.encode(hashIV), tagLength: TAG_BYTES * 8 }, key, enc.encode(httpBuildQuery(params))));
+  const out = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: k.iv as BufferSource, tagLength: TAG_BYTES * 8 }, key, enc.encode(httpBuildQuery(params))));
   const cipher = out.slice(0, out.length - TAG_BYTES);
   const tag = out.slice(out.length - TAG_BYTES);
   return toHex(enc.encode(`${toB64(cipher)}:::${toB64(tag)}`));
 }
 
 export async function decryptInfo(encryptInfoHex: string, hashKey: string, hashIV: string): Promise<Record<string, string>> {
-  checkKeys(hashKey, hashIV);
+  const k = keyBytes(hashKey, hashIV);
   const [c64, t64, ...rest] = dec.decode(fromHex(encryptInfoHex.trim())).split(':::');
   if (!c64 || !t64 || rest.length) throw new Error('EncryptInfo 格式錯誤');
   const cipher = fromB64(c64);
@@ -86,8 +90,8 @@ export async function decryptInfo(encryptInfoHex: string, hashKey: string, hashI
   const joined = new Uint8Array(cipher.length + tag.length);
   joined.set(cipher);
   joined.set(tag, cipher.length);
-  const key = await importKey(hashKey, 'decrypt');
-  const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: enc.encode(hashIV), tagLength: TAG_BYTES * 8 }, key, joined);
+  const key = await importKey(k.key, 'decrypt');
+  const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: k.iv as BufferSource, tagLength: TAG_BYTES * 8 }, key, joined);
   return parseQuery(dec.decode(plain));
 }
 
