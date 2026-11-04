@@ -1,0 +1,34 @@
+[
+  {
+    "id": "fx-official-1",
+    "subject": 1,
+    "item": "L21101",
+    "stem": "【測試資料】L21101 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L21101 第 1 題。",
+    "related": "測試相關知識：L21101。",
+    "source": "official"
+  },
+  {
+    "id": "fx-official-3",
+    "subject": 3,
+    "item": "L23301",
+    "stem": "【測試資料】L23301 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23301 第 1 題。",
+    "related": "測試相關知識：L23301。",
+    "source": "official"
+  }
+]

@@ -1,0 +1,514 @@
+[
+  {
+    "id": "fx-1-L21101-1",
+    "subject": 1,
+    "item": "L21101",
+    "stem": "【測試資料】L21101 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L21101 第 1 題。",
+    "related": "測試相關知識：L21101。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21101-2",
+    "subject": 1,
+    "item": "L21101",
+    "stem": "【測試資料】L21101 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L21101 第 2 題。",
+    "related": "測試相關知識：L21101。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21101-3",
+    "subject": 1,
+    "item": "L21101",
+    "stem": "【測試資料】L21101 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L21101 第 3 題。",
+    "related": "測試相關知識：L21101。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21102-1",
+    "subject": 1,
+    "item": "L21102",
+    "stem": "【測試資料】L21102 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L21102 第 1 題。",
+    "related": "測試相關知識：L21102。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21102-2",
+    "subject": 1,
+    "item": "L21102",
+    "stem": "【測試資料】L21102 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L21102 第 2 題。",
+    "related": "測試相關知識：L21102。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21102-3",
+    "subject": 1,
+    "item": "L21102",
+    "stem": "【測試資料】L21102 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L21102 第 3 題。",
+    "related": "測試相關知識：L21102。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21102-4",
+    "subject": 1,
+    "item": "L21102",
+    "stem": "【測試資料】L21102 第 4 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 2,
+    "explanation": "測試詳解：L21102 第 4 題。",
+    "related": "測試相關知識：L21102。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21103-1",
+    "subject": 1,
+    "item": "L21103",
+    "stem": "【測試資料】L21103 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L21103 第 1 題。",
+    "related": "測試相關知識：L21103。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21103-2",
+    "subject": 1,
+    "item": "L21103",
+    "stem": "【測試資料】L21103 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L21103 第 2 題。",
+    "related": "測試相關知識：L21103。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21103-3",
+    "subject": 1,
+    "item": "L21103",
+    "stem": "【測試資料】L21103 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L21103 第 3 題。",
+    "related": "測試相關知識：L21103。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21104-1",
+    "subject": 1,
+    "item": "L21104",
+    "stem": "【測試資料】L21104 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L21104 第 1 題。",
+    "related": "測試相關知識：L21104。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21104-2",
+    "subject": 1,
+    "item": "L21104",
+    "stem": "【測試資料】L21104 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L21104 第 2 題。",
+    "related": "測試相關知識：L21104。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21104-3",
+    "subject": 1,
+    "item": "L21104",
+    "stem": "【測試資料】L21104 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L21104 第 3 題。",
+    "related": "測試相關知識：L21104。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21104-4",
+    "subject": 1,
+    "item": "L21104",
+    "stem": "【測試資料】L21104 第 4 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 2,
+    "explanation": "測試詳解：L21104 第 4 題。",
+    "related": "測試相關知識：L21104。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21201-1",
+    "subject": 1,
+    "item": "L21201",
+    "stem": "【測試資料】L21201 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L21201 第 1 題。",
+    "related": "測試相關知識：L21201。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21201-2",
+    "subject": 1,
+    "item": "L21201",
+    "stem": "【測試資料】L21201 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L21201 第 2 題。",
+    "related": "測試相關知識：L21201。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21201-3",
+    "subject": 1,
+    "item": "L21201",
+    "stem": "【測試資料】L21201 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L21201 第 3 題。",
+    "related": "測試相關知識：L21201。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21202-1",
+    "subject": 1,
+    "item": "L21202",
+    "stem": "【測試資料】L21202 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L21202 第 1 題。",
+    "related": "測試相關知識：L21202。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21202-2",
+    "subject": 1,
+    "item": "L21202",
+    "stem": "【測試資料】L21202 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L21202 第 2 題。",
+    "related": "測試相關知識：L21202。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21202-3",
+    "subject": 1,
+    "item": "L21202",
+    "stem": "【測試資料】L21202 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L21202 第 3 題。",
+    "related": "測試相關知識：L21202。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21202-4",
+    "subject": 1,
+    "item": "L21202",
+    "stem": "【測試資料】L21202 第 4 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 2,
+    "explanation": "測試詳解：L21202 第 4 題。",
+    "related": "測試相關知識：L21202。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21203-1",
+    "subject": 1,
+    "item": "L21203",
+    "stem": "【測試資料】L21203 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L21203 第 1 題。",
+    "related": "測試相關知識：L21203。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21203-2",
+    "subject": 1,
+    "item": "L21203",
+    "stem": "【測試資料】L21203 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L21203 第 2 題。",
+    "related": "測試相關知識：L21203。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21203-3",
+    "subject": 1,
+    "item": "L21203",
+    "stem": "【測試資料】L21203 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L21203 第 3 題。",
+    "related": "測試相關知識：L21203。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21301-1",
+    "subject": 1,
+    "item": "L21301",
+    "stem": "【測試資料】L21301 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L21301 第 1 題。",
+    "related": "測試相關知識：L21301。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21301-2",
+    "subject": 1,
+    "item": "L21301",
+    "stem": "【測試資料】L21301 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L21301 第 2 題。",
+    "related": "測試相關知識：L21301。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21301-3",
+    "subject": 1,
+    "item": "L21301",
+    "stem": "【測試資料】L21301 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L21301 第 3 題。",
+    "related": "測試相關知識：L21301。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21301-4",
+    "subject": 1,
+    "item": "L21301",
+    "stem": "【測試資料】L21301 第 4 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 2,
+    "explanation": "測試詳解：L21301 第 4 題。",
+    "related": "測試相關知識：L21301。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21302-1",
+    "subject": 1,
+    "item": "L21302",
+    "stem": "【測試資料】L21302 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L21302 第 1 題。",
+    "related": "測試相關知識：L21302。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21302-2",
+    "subject": 1,
+    "item": "L21302",
+    "stem": "【測試資料】L21302 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L21302 第 2 題。",
+    "related": "測試相關知識：L21302。",
+    "source": "original"
+  },
+  {
+    "id": "fx-1-L21302-3",
+    "subject": 1,
+    "item": "L21302",
+    "stem": "【測試資料】L21302 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L21302 第 3 題。",
+    "related": "測試相關知識：L21302。",
+    "source": "original"
+  },
+  {
+    "id": "fx-leak-official",
+    "subject": 1,
+    "item": "L21101",
+    "stem": "【測試資料】L21101 第 9 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L21101 第 9 題。",
+    "related": "測試相關知識：L21101。",
+    "source": "official"
+  }
+]

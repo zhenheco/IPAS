@@ -1,0 +1,5 @@
+---
+import Base from '../layouts/Base.astro';
+import Home from '../components/Home.tsx';
+---
+<Base title="首頁"><Home client:only="preact" /></Base>
