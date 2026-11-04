@@ -30,3 +30,26 @@ export async function writeJsonAtomic(file: string, data: unknown, fs: Fs = fsp)
     throw e;
   }
 }
+
+/** Variant questions are filed as `<item>-V<NNN>`; they never count toward a 知識點's per-item quota. */
+export const isVariantId = (id: unknown): boolean => /-V\d+$/.test(String(id));
+
+/** Question files in a directory; dot-files (.variants-progress.json) are bookkeeping, not questions. */
+export const questionFileNames = async (dir: string): Promise<string[]> =>
+  (await fsp.readdir(dir).catch(() => [] as string[])).filter((f) => f.endsWith(".json") && !f.startsWith("."));
+
+/** Every question in the sibling question files (sample.json, the other subjects): duplicate baseline only, never quota. */
+export async function readOtherQuestions(outFile: string): Promise<Question[]> {
+  const dir = path.dirname(outFile);
+  const out: Question[] = [];
+  for (const f of (await questionFileNames(dir)).filter((f) => path.join(dir, f) !== outFile)) {
+    try {
+      const data = JSON.parse(await fsp.readFile(path.join(dir, f), "utf8"));
+      if (!Array.isArray(data)) throw new Error("not a JSON array");
+      out.push(...data);
+    } catch (e) {
+      throw new Error(`cannot read ${path.join(dir, f)} for the duplicate check: ${(e as Error).message}`);
+    }
+  }
+  return out;
+}

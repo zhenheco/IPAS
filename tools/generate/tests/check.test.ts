@@ -37,3 +37,23 @@ describe("checkFiles", () => {
     expect(text).toMatch(/subject-1\.json/); // dup id + subject 3 question in subject-1 file
   });
 });
+
+describe("checkFiles: dot-files and official sources", () => {
+  const dir = () => fs.mkdtemp(path.join(os.tmpdir(), "chk-"));
+  it("skips dot-files such as .variants-progress.json", async () => {
+    const d = await dir();
+    await fs.writeFile(path.join(d, ".variants-progress.json"), "{}");
+    expect((await checkFiles(d, syllabus())).errors).toEqual([]);
+  });
+  it("official files must hold 50 official questions of the subject in their name; a repeat across exams is fine", async () => {
+    const d = await dir();
+    const fifty = (s: number) => Array.from({ length: 50 }, (_, i) => fullQ({ id: `OFF-X-S${s}-${i}`, source: "official", stem: `同一題幹${i}` }));
+    await fs.writeFile(path.join(d, "114-2-s3.json"), JSON.stringify(fifty(3)));
+    await fs.writeFile(path.join(d, "115-1-s3.json"), JSON.stringify(fifty(3).map((q) => ({ ...q, id: q.id + "b" }))));
+    expect((await checkFiles(d, syllabus(), "official")).errors).toEqual([]);
+    await fs.writeFile(path.join(d, "115-1-s3.json"), JSON.stringify(fifty(3).slice(1).map((q) => ({ ...q, source: "original" }))));
+    const errors = (await checkFiles(d, syllabus(), "official")).errors.join("\n");
+    expect(errors).toMatch(/49 questions, expected 50/);
+    expect(errors).toMatch(/source must be "official"/);
+  });
+});

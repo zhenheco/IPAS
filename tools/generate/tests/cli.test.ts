@@ -29,3 +29,13 @@ describe("formatSummary", () => {
     expect(out).toContain("SHORTFALL: 1");
   });
 });
+
+describe("parseArgs --variants", () => {
+  it("is an alternative to --total", () =>
+    expect(parseArgs(["--subject", "3", "--variants", "2"])).toMatchObject({ subject: 3, variants: 2, concurrency: 4 }));
+  it("cannot be combined with --total, and one of the two is required", () => {
+    expect(() => parseArgs(["--subject", "3", "--variants", "2", "--total", "10"])).toThrow(/either/);
+    expect(() => parseArgs(["--subject", "3"])).toThrow(/--total or --variants/);
+  });
+  it("must be a positive integer", () => expect(() => parseArgs(["--subject", "3", "--variants", "0"])).toThrow());
+});
