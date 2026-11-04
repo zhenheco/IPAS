@@ -43,6 +43,13 @@ describe('EncryptInfo / HashInfo', () => {
     const p = { A: '中文 & = ?', B: '', C: 0, D: 'x'.repeat(5000) };
     expect(await decryptInfo(await encryptInfo(p, KEY, IV), KEY, IV)).toEqual({ A: '中文 & = ?', B: '', C: '0', D: 'x'.repeat(5000) });
   });
+  it('also accepts a JSON plaintext', async () => {
+    const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(KEY), { name: 'AES-GCM' }, false, ['encrypt']);
+    const out = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: new TextEncoder().encode(IV) }, key, new TextEncoder().encode('{"MerID":"S1","TradeAmt":490,"X":null}')));
+    const b64 = (b: Uint8Array) => btoa(String.fromCharCode(...b));
+    const hex = Array.from(new TextEncoder().encode(`${b64(out.slice(0, -16))}:::${b64(out.slice(-16))}`), (x) => x.toString(16).padStart(2, '0')).join('');
+    expect(await decryptInfo(hex, KEY, IV)).toEqual({ MerID: 'S1', TradeAmt: '490', X: '' });
+  });
   it('hash is uppercase hex sha256 of key+encrypt+iv', async () => {
     expect(await hashInfo('', KEY, IV)).toMatch(/^[0-9A-F]{64}$/);
     expect(await hashInfo('ab', KEY, IV)).not.toBe(await hashInfo('ac', KEY, IV));

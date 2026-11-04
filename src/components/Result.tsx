@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'preact/hooks';
 import { MODE_LABEL } from '../config';
 import { buildReview } from '../lib/review';
-import { fullFirstOf, passScoreOf, subjectLabel } from '../lib/levels';
+import { fullFirstOf, levelOf, passScoreOf, subjectLabel } from '../lib/levels';
+import AdSlot from './AdSlot';
+import UpgradePrompt from './UpgradePrompt';
 import { certificate, isPassed } from '../lib/scoring';
 import { Badge, Card, Loading, fmtDate, query, useApp, useBank } from './app';
 import { Review } from './Review';
@@ -47,6 +49,9 @@ export default function Result() {
           {cert ? <p><b>{cert.name}證書條件：{cert.earned ? `已達成（兩科皆 ${pass} 分以上）` : `未達成（需兩科皆 ${pass} 分以上）`}</b></p> : null}
         </Card>
       ) : null}
+
+      <UpgradePrompt level={levelOf(s.subject)} />
+      <AdSlot slot="result" level={levelOf(s.subject)} />
 
       <div class="row">
         <a class="btn" href="/practice/">再練習</a>

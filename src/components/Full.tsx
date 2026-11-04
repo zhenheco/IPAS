@@ -8,6 +8,7 @@ import { advanceToSection2, createSession, examBlock } from '../lib/session';
 import { filterPool } from '../lib/syllabus';
 import { formatClock, remainingMs } from '../lib/timer';
 import { Card, LevelTabs, Loading, SaveWarning, go, isUnsaved, newId, useApp, useBank, useLevel } from './app';
+import Paywall from './Paywall';
 import { beginSession } from './start';
 
 export default function Full() {
@@ -87,11 +88,13 @@ export default function Full() {
   }
 
   const last = exam ? state.sessions.filter((s) => s.fullId === exam.id).at(-1) : undefined;
+  // an exam already under way is never locked mid-way; only starting a new one is paid
   return (
     <>
       <h1>全真模考 · {info.name}</h1>
       <SaveWarning ok={saveOk} />
       <LevelTabs levels={bank.levels} level={level} onPick={(l) => { setLevel(l); setElective(null); }} />
+      <Paywall feature="full" level={level}>
       <ul class="rules">
         <li>依序進行{subjectShort(first)}（必考）→ 休息（至多 30 分鐘，可提早結束）→ {subjectShort(elective)}，各 {QUESTIONS_PER_SESSION} 題、上限 {minutes} 分鐘，時間到自動交卷。</li>
         <li>開始時間由你決定；開始後不可暫停。</li>
@@ -109,6 +112,7 @@ export default function Full() {
         {blocks.map((m) => <p key={m} class="notice warn">{m}</p>)}
         <button class="btn" disabled={blocks.length > 0} onClick={start}>開始全真模考</button>
       </Card>
+      </Paywall>
     </>
   );
 }

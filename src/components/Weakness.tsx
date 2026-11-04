@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
-import { subjectLabel } from '../lib/levels';
+import { levelOf, subjectLabel } from '../lib/levels';
+import Paywall from './Paywall';
 import { itemName } from '../lib/syllabus';
 import { firstSubjectWithData } from '../lib/subjects';
 import type { Subject } from '../lib/types';
@@ -23,6 +24,7 @@ export default function Weakness() {
           <button key={s} role="tab" aria-selected={s === subject} class={s === subject ? 'on' : ''} onClick={() => setSubject(s)}>{subjectLabel(s)}</button>
         ))}
       </div>
+      <Paywall feature="weakness" level={levelOf(subject)}>
       {rows.length === 0 ? (
         <p class="notice">{subjectLabel(subject)}還沒有作答紀錄。</p>
       ) : (
@@ -42,6 +44,7 @@ export default function Weakness() {
           </table>
         </div>
       )}
+      </Paywall>
     </>
   );
 }

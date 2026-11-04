@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks';
 import { QUESTIONS_PER_SESSION } from '../config';
-import { SUBJECT_INFO, subjectLabel } from '../lib/levels';
+import { SUBJECT_INFO, levelOf, subjectLabel } from '../lib/levels';
+import Paywall from './Paywall';
 import { itemName } from '../lib/syllabus';
 import { firstSubjectWithData } from '../lib/subjects';
 import type { Subject } from '../lib/types';
@@ -38,6 +39,7 @@ export default function WrongBook() {
         ))}
       </div>
       <p class="muted">{SUBJECT_INFO[subject].name}</p>
+      <Paywall feature="wrongbook" level={levelOf(subject)}>
 
       {ids.length === 0 ? (
         <p class="notice">{subjectLabel(subject)}的錯題本是空的。</p>
@@ -60,6 +62,7 @@ export default function WrongBook() {
           ))}
         </>
       )}
+      </Paywall>
     </>
   );
 }

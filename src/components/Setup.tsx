@@ -5,6 +5,7 @@ import { examBlock } from '../lib/session';
 import { filterPool, itemName, topicName, topicOf } from '../lib/syllabus';
 import type { Subject } from '../lib/types';
 import { Card, LevelTabs, Loading, SaveWarning, query, useApp, useBank, useLevel } from './app';
+import Paywall from './Paywall';
 import { beginSession } from './start';
 
 /** 練習 and 單科模考 share one setup screen; only 練習 can narrow to a 評鑑主題 or 知識點. */
@@ -68,6 +69,7 @@ export default function Setup({ mode }: { mode: 'practice' | 'exam' }) {
       ) : null}
 
       <LevelTabs levels={bank.levels} level={level} onPick={(l) => { setLevel(l); setSubject(null); setTopic(''); setItem(''); setPaper(''); }} />
+      <Paywall feature={mode} level={level}>
       <Card>
         <label class="field">科目（{LEVELS[level].name}）
           <select value={subject} onChange={(e) => { setSubject(Number(e.currentTarget.value) as Subject); setTopic(''); setItem(''); setPaper(''); }}>
@@ -109,6 +111,7 @@ export default function Setup({ mode }: { mode: 'practice' | 'exam' }) {
           {chosenPaper ? `開始模擬試卷 第 ${chosenPaper.no} 回（${chosenPaper.questionIds.length} 題）` : pool.length === 0 ? '這個範圍沒有題目' : `開始${MODE_LABEL[mode]}（${n} 題）`}
         </button>
       </Card>
+      </Paywall>
     </>
   );
 }

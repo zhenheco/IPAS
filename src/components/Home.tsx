@@ -4,6 +4,7 @@ import { isPassed } from '../lib/scoring';
 import { daysUntil } from '../lib/timer';
 import { Badge, Card, LevelTabs, Loading, SaveWarning, fmtDate, useApp, useBank, useLevel } from './app';
 import { wrongBookIds } from '../lib/wrongbook';
+import AdSlot from './AdSlot';
 
 export default function Home() {
   const { state, saveOk } = useApp();
@@ -64,6 +65,8 @@ export default function Home() {
           </Card>
         ) : null}
       </div>
+
+      <AdSlot slot="home" level={level} />
 
       <h2>近期成績</h2>
       {recent.length === 0 ? (

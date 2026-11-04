@@ -92,7 +92,20 @@ export async function decryptInfo(encryptInfoHex: string, hashKey: string, hashI
   joined.set(tag, cipher.length);
   const key = await importKey(k.key, 'decrypt');
   const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: k.iv as BufferSource, tagLength: TAG_BYTES * 8 }, key, joined);
-  return parseQuery(dec.decode(plain));
+  return parsePlain(dec.decode(plain));
+}
+
+/**
+ * 解密後內容：官方 PHP 範例以 parse_str 解析 query string；
+ * 第三方 payuni-sdk-ts（改寫自官方 .NET SDK）另會先嘗試 JSON。兩者都支援，值一律轉為字串。
+ */
+function parsePlain(s: string): Record<string, string> {
+  const t = s.trim();
+  if (t.startsWith('{')) {
+    const o = JSON.parse(t) as Record<string, unknown>;
+    return Object.fromEntries(Object.entries(o).map(([k, v]) => [k, typeof v === 'string' ? v : v === null || v === undefined ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v)]));
+  }
+  return parseQuery(t);
 }
 
 export async function hashInfo(encryptInfoHex: string, hashKey: string, hashIV: string): Promise<string> {
