@@ -1,4 +1,4 @@
-import type { ItemRef, SyllabusSubject } from "./types.js";
+import type { ItemRef, Question, SyllabusSubject } from "./types.js";
 
 export const MODEL = "claude-opus-5-5";
 
@@ -43,6 +43,18 @@ const CODE_RULES = `
 
 科目 3 的額外規則：約三成題目應為 Python 程式碼閱讀題（使用 scikit-learn、PyTorch 或 numpy），在 stem 中以 Markdown 圍欄 \`\`\`python 附上 5 至 15 行可執行的短程式，問輸出結果、張量形狀、錯誤原因、資料洩漏、超參數意義或最適當的修改。程式要正確且自成一體；若問輸出，答案必須是你能確定的輸出（不要依賴隨機性）。若該知識點不適合程式題（例如治理、法規、偏見與公平性的概念面），改以概念或情境題取代，不要硬塞程式碼。`;
 
+const CALIBRATION_RULES = `
+
+官方歷屆試題範例（校準用）：使用者訊息會附上數題官方歷屆試題作為範例。請對標它們的難度、題幹長度、情境寫法與選項格式；若自然，採用官方常見的「名稱：說明」選項寫法（例如「LoRA：凍結原權重並加入低秩矩陣」）。範例只用來校準風格：不得沿用範例的情境、數字、人物或公司設定、用字，也不得改寫範例題幹；你的題目必須針對指定的知識點，並考與範例不同的觀念與角度。`;
+
+export const systemPrompt = (subjectNo: number, extra = ""): string => (subjectNo === 3 ? BASE_RULES + CODE_RULES : BASE_RULES) + extra;
+
+export const LETTERS = ["A", "B", "C", "D"] as const;
+
+/** An official question as the model sees it in a prompt: stem and lettered options, plus the printed answer. */
+export const renderQuestion = (q: Question): string =>
+  `題幹：${q.stem}\n${q.options.map((o, i) => `(${LETTERS[i]})${o}`).join("\n")}\n（官方答案：${LETTERS[q.answer]}）`;
+
 /** `n` target answer positions (0..3), as even as possible, in random order. */
 export function balancedPositions(n: number, rng: () => number = Math.random): number[] {
   const offset = Math.floor(rng() * 4);
@@ -60,25 +72,30 @@ export interface RequestArgs {
   count: number;
   positions: number[];
   existingStems: string[];
+  /** official questions to calibrate difficulty and style against (see selectExemplars); none = no calibration */
+  exemplars?: Question[];
 }
 
-export function buildRequest({ subject, item, count, positions, existingStems }: RequestArgs) {
+export function buildRequest({ subject, item, count, positions, existingStems, exemplars = [] }: RequestArgs) {
   const seen = existingStems.length
     ? `\n\n已出過的題幹（避免重複主題與考法）：\n${existingStems.map((s) => `- ${s}`).join("\n")}`
+    : "";
+  const calibration = exemplars.length
+    ? `\n\n官方歷屆試題範例（只供對標難度與寫法，不可沿用其情境、數字或用字）：\n${exemplars.map((q, i) => `範例 ${i + 1}（${q.item}）\n${renderQuestion(q)}`).join("\n\n")}`
     : "";
   const content = `科目：科目${subject.subject}「${subject.name}」（${subject.code}）
 評鑑主題：${item.topicCode} ${item.topicName}
 知識點：${item.code} ${item.name}
 
 請產出 ${count} 題原創單選題。各題正確答案的位置如下（answer 為 0 起算的選項索引）：
-${positions.map((p, i) => `第 ${i + 1} 題 answer = ${p}`).join("\n")}${seen}`;
+${positions.map((p, i) => `第 ${i + 1} 題 answer = ${p}`).join("\n")}${seen}${calibration}`;
 
   return {
     model: MODEL,
     max_tokens: 64000,
     // Opus 5.5 always thinks; its default effort is medium, so set it explicitly.
     output_config: { effort: "high" as const, format: { type: "json_schema" as const, schema: QUESTION_SCHEMA as unknown as Record<string, unknown> } },
-    system: subject.subject === 3 ? BASE_RULES + CODE_RULES : BASE_RULES,
+    system: systemPrompt(subject.subject, exemplars.length ? CALIBRATION_RULES : ""),
     messages: [{ role: "user" as const, content }],
   };
 }

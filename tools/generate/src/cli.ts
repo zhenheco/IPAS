@@ -1,8 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadOfficial, requireExemplars } from "./exemplars.js";
 import { runGeneration, type GenerationResult } from "./generate.js";
 import { loadSyllabus } from "./syllabus.js";
+import { runVariants } from "./variants.js";
 
 export function requireApiKey(env: Record<string, string | undefined>): string {
   const key = env.ANTHROPIC_API_KEY?.trim();
@@ -10,13 +12,20 @@ export function requireApiKey(env: Record<string, string | undefined>): string {
   return key;
 }
 
-export interface Args { subject: 1 | 2 | 3; total: number; concurrency: number }
+export interface Args {
+  subject: 1 | 2 | 3;
+  /** per-item quota mode: total questions for the subject */
+  total?: number;
+  /** variants mode: original variants per official question (separate quota, see variants.ts) */
+  variants?: number;
+  concurrency: number;
+}
 
 export function parseArgs(argv: string[]): Args {
   const v: Record<string, string> = {};
   for (let i = 0; i < argv.length; i += 2) {
     const k = argv[i]!;
-    if (!["--subject", "--total", "--concurrency"].includes(k) || argv[i + 1] === undefined) throw new Error(`bad argument: ${k}`);
+    if (!["--subject", "--total", "--variants", "--concurrency"].includes(k) || argv[i + 1] === undefined) throw new Error(`bad argument: ${k}`);
     v[k.slice(2)] = argv[i + 1]!;
   }
   const int = (name: string, def?: number) => {
@@ -26,7 +35,13 @@ export function parseArgs(argv: string[]): Args {
   };
   const subject = int("subject");
   if (subject > 3) throw new Error("--subject must be 1, 2 or 3");
-  return { subject: subject as 1 | 2 | 3, total: int("total"), concurrency: int("concurrency", 4) };
+  if (v.total !== undefined && v.variants !== undefined) throw new Error("use either --total or --variants, not both");
+  if (v.total === undefined && v.variants === undefined) throw new Error("--total or --variants is required");
+  return {
+    subject: subject as 1 | 2 | 3,
+    ...(v.variants === undefined ? { total: int("total") } : { variants: int("variants") }),
+    concurrency: int("concurrency", 4),
+  };
 }
 
 export function formatSummary(r: GenerationResult): string {
@@ -43,15 +58,27 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const key = requireApiKey(process.env);
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../data");
+  // maxRetries 0: withRetry owns retries/backoff.
+  const client = new Anthropic({ apiKey: key, maxRetries: 0 });
+  const syllabus = loadSyllabus(path.join(root, "syllabus.json"));
+  const outFile = path.join(root, "questions", `subject-${args.subject}.json`);
+  const official = await loadOfficial(path.join(root, "official"), args.subject);
+  if (args.variants !== undefined) {
+    if (!official.length) throw new Error(`no official questions for subject ${args.subject} in data/official; run import-official first`);
+    const r = await runVariants({
+      client, syllabus, subject: args.subject, official, perQuestion: args.variants, concurrency: args.concurrency, outFile,
+      progressFile: path.join(root, "questions", ".variants-progress.json"), log: console.log,
+    });
+    console.log(`\nvariants: ${r.target - r.shortfall}/${r.target} (new ${r.added}, dropped ${r.dropped})`);
+    console.log(`total in file: ${r.total}\ntokens: ${r.usage.input} in / ${r.usage.output} out`);
+    console.log(r.shortfall ? `SHORTFALL: ${r.shortfall} variant(s) missing; re-run the same command to resume` : "all variants complete");
+    process.exitCode = r.shortfall ? 1 : 0;
+    return;
+  }
+  const exemplars = requireExemplars(official, syllabus, args.subject);
+  console.log(`calibrating against ${exemplars.length} official question(s) of subject ${args.subject}`);
   const result = await runGeneration({
-    // maxRetries 0: withRetry owns retries/backoff.
-    client: new Anthropic({ apiKey: key, maxRetries: 0 }),
-    syllabus: loadSyllabus(path.join(root, "syllabus.json")),
-    subject: args.subject,
-    total: args.total,
-    concurrency: args.concurrency,
-    outFile: path.join(root, "questions", `subject-${args.subject}.json`),
-    log: console.log,
+    client, syllabus, subject: args.subject, total: args.total!, concurrency: args.concurrency, outFile, official: exemplars, log: console.log,
   });
   console.log("\n" + formatSummary(result));
   process.exitCode = result.shortfall ? 1 : 0;
