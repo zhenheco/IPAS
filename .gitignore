@@ -3,3 +3,6 @@ data/official/
 data/questions/*.tmp
 data/questions/.generate.lock
 *.log
+dist
+.astro
+.wrangler

@@ -1,0 +1,866 @@
+[
+  {
+    "id": "fx-3-L23101-1",
+    "subject": 3,
+    "item": "L23101",
+    "stem": "【測試資料】L23101 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23101 第 1 題。",
+    "related": "測試相關知識：L23101。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23101-2",
+    "subject": 3,
+    "item": "L23101",
+    "stem": "【測試資料】L23101 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L23101 第 2 題。",
+    "related": "測試相關知識：L23101。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23101-3",
+    "subject": 3,
+    "item": "L23101",
+    "stem": "【測試資料】L23101 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L23101 第 3 題。",
+    "related": "測試相關知識：L23101。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23101-4",
+    "subject": 3,
+    "item": "L23101",
+    "stem": "【測試資料】L23101 第 4 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 2,
+    "explanation": "測試詳解：L23101 第 4 題。",
+    "related": "測試相關知識：L23101。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23102-1",
+    "subject": 3,
+    "item": "L23102",
+    "stem": "【測試資料】L23102 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23102 第 1 題。",
+    "related": "測試相關知識：L23102。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23102-2",
+    "subject": 3,
+    "item": "L23102",
+    "stem": "【測試資料】L23102 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L23102 第 2 題。",
+    "related": "測試相關知識：L23102。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23102-3",
+    "subject": 3,
+    "item": "L23102",
+    "stem": "【測試資料】L23102 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L23102 第 3 題。",
+    "related": "測試相關知識：L23102。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23102-4",
+    "subject": 3,
+    "item": "L23102",
+    "stem": "【測試資料】L23102 第 4 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 2,
+    "explanation": "測試詳解：L23102 第 4 題。",
+    "related": "測試相關知識：L23102。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23102-5",
+    "subject": 3,
+    "item": "L23102",
+    "stem": "【測試資料】L23102 第 5 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23102 第 5 題。",
+    "related": "測試相關知識：L23102。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23103-1",
+    "subject": 3,
+    "item": "L23103",
+    "stem": "【測試資料】L23103 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23103 第 1 題。",
+    "related": "測試相關知識：L23103。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23103-2",
+    "subject": 3,
+    "item": "L23103",
+    "stem": "【測試資料】L23103 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L23103 第 2 題。",
+    "related": "測試相關知識：L23103。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23103-3",
+    "subject": 3,
+    "item": "L23103",
+    "stem": "【測試資料】L23103 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L23103 第 3 題。",
+    "related": "測試相關知識：L23103。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23103-4",
+    "subject": 3,
+    "item": "L23103",
+    "stem": "【測試資料】L23103 第 4 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 2,
+    "explanation": "測試詳解：L23103 第 4 題。",
+    "related": "測試相關知識：L23103。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23201-1",
+    "subject": 3,
+    "item": "L23201",
+    "stem": "【測試資料】L23201 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23201 第 1 題。",
+    "related": "測試相關知識：L23201。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23201-2",
+    "subject": 3,
+    "item": "L23201",
+    "stem": "【測試資料】L23201 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L23201 第 2 題。",
+    "related": "測試相關知識：L23201。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23201-3",
+    "subject": 3,
+    "item": "L23201",
+    "stem": "【測試資料】L23201 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L23201 第 3 題。",
+    "related": "測試相關知識：L23201。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23201-4",
+    "subject": 3,
+    "item": "L23201",
+    "stem": "【測試資料】L23201 第 4 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 2,
+    "explanation": "測試詳解：L23201 第 4 題。",
+    "related": "測試相關知識：L23201。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23201-5",
+    "subject": 3,
+    "item": "L23201",
+    "stem": "【測試資料】L23201 第 5 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23201 第 5 題。",
+    "related": "測試相關知識：L23201。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23202-1",
+    "subject": 3,
+    "item": "L23202",
+    "stem": "【測試資料】L23202 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23202 第 1 題。",
+    "related": "測試相關知識：L23202。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23202-2",
+    "subject": 3,
+    "item": "L23202",
+    "stem": "【測試資料】L23202 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L23202 第 2 題。",
+    "related": "測試相關知識：L23202。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23202-3",
+    "subject": 3,
+    "item": "L23202",
+    "stem": "【測試資料】L23202 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L23202 第 3 題。",
+    "related": "測試相關知識：L23202。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23202-4",
+    "subject": 3,
+    "item": "L23202",
+    "stem": "【測試資料】L23202 第 4 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 2,
+    "explanation": "測試詳解：L23202 第 4 題。",
+    "related": "測試相關知識：L23202。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23203-1",
+    "subject": 3,
+    "item": "L23203",
+    "stem": "【測試資料】L23203 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23203 第 1 題。",
+    "related": "測試相關知識：L23203。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23203-2",
+    "subject": 3,
+    "item": "L23203",
+    "stem": "【測試資料】L23203 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L23203 第 2 題。",
+    "related": "測試相關知識：L23203。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23203-3",
+    "subject": 3,
+    "item": "L23203",
+    "stem": "【測試資料】L23203 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L23203 第 3 題。",
+    "related": "測試相關知識：L23203。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23203-4",
+    "subject": 3,
+    "item": "L23203",
+    "stem": "【測試資料】L23203 第 4 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 2,
+    "explanation": "測試詳解：L23203 第 4 題。",
+    "related": "測試相關知識：L23203。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23203-5",
+    "subject": 3,
+    "item": "L23203",
+    "stem": "【測試資料】L23203 第 5 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23203 第 5 題。",
+    "related": "測試相關知識：L23203。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23301-1",
+    "subject": 3,
+    "item": "L23301",
+    "stem": "【測試資料】L23301 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23301 第 1 題。",
+    "related": "測試相關知識：L23301。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23301-2",
+    "subject": 3,
+    "item": "L23301",
+    "stem": "【測試資料】L23301 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L23301 第 2 題。",
+    "related": "測試相關知識：L23301。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23301-3",
+    "subject": 3,
+    "item": "L23301",
+    "stem": "【測試資料】L23301 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L23301 第 3 題。",
+    "related": "測試相關知識：L23301。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23301-4",
+    "subject": 3,
+    "item": "L23301",
+    "stem": "【測試資料】L23301 第 4 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 2,
+    "explanation": "測試詳解：L23301 第 4 題。",
+    "related": "測試相關知識：L23301。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23302-1",
+    "subject": 3,
+    "item": "L23302",
+    "stem": "【測試資料】L23302 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23302 第 1 題。",
+    "related": "測試相關知識：L23302。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23302-2",
+    "subject": 3,
+    "item": "L23302",
+    "stem": "【測試資料】L23302 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L23302 第 2 題。",
+    "related": "測試相關知識：L23302。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23302-3",
+    "subject": 3,
+    "item": "L23302",
+    "stem": "【測試資料】L23302 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L23302 第 3 題。",
+    "related": "測試相關知識：L23302。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23302-4",
+    "subject": 3,
+    "item": "L23302",
+    "stem": "【測試資料】L23302 第 4 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 2,
+    "explanation": "測試詳解：L23302 第 4 題。",
+    "related": "測試相關知識：L23302。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23302-5",
+    "subject": 3,
+    "item": "L23302",
+    "stem": "【測試資料】L23302 第 5 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23302 第 5 題。",
+    "related": "測試相關知識：L23302。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23303-1",
+    "subject": 3,
+    "item": "L23303",
+    "stem": "【測試資料】L23303 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23303 第 1 題。",
+    "related": "測試相關知識：L23303。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23303-2",
+    "subject": 3,
+    "item": "L23303",
+    "stem": "【測試資料】L23303 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L23303 第 2 題。",
+    "related": "測試相關知識：L23303。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23303-3",
+    "subject": 3,
+    "item": "L23303",
+    "stem": "【測試資料】L23303 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L23303 第 3 題。",
+    "related": "測試相關知識：L23303。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23303-4",
+    "subject": 3,
+    "item": "L23303",
+    "stem": "【測試資料】L23303 第 4 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 2,
+    "explanation": "測試詳解：L23303 第 4 題。",
+    "related": "測試相關知識：L23303。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23304-1",
+    "subject": 3,
+    "item": "L23304",
+    "stem": "【測試資料】L23304 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23304 第 1 題。",
+    "related": "測試相關知識：L23304。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23304-2",
+    "subject": 3,
+    "item": "L23304",
+    "stem": "【測試資料】L23304 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L23304 第 2 題。",
+    "related": "測試相關知識：L23304。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23304-3",
+    "subject": 3,
+    "item": "L23304",
+    "stem": "【測試資料】L23304 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L23304 第 3 題。",
+    "related": "測試相關知識：L23304。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23304-4",
+    "subject": 3,
+    "item": "L23304",
+    "stem": "【測試資料】L23304 第 4 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 2,
+    "explanation": "測試詳解：L23304 第 4 題。",
+    "related": "測試相關知識：L23304。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23304-5",
+    "subject": 3,
+    "item": "L23304",
+    "stem": "【測試資料】L23304 第 5 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23304 第 5 題。",
+    "related": "測試相關知識：L23304。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23401-1",
+    "subject": 3,
+    "item": "L23401",
+    "stem": "【測試資料】L23401 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23401 第 1 題。",
+    "related": "測試相關知識：L23401。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23401-2",
+    "subject": 3,
+    "item": "L23401",
+    "stem": "【測試資料】L23401 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L23401 第 2 題。",
+    "related": "測試相關知識：L23401。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23401-3",
+    "subject": 3,
+    "item": "L23401",
+    "stem": "【測試資料】L23401 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L23401 第 3 題。",
+    "related": "測試相關知識：L23401。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23401-4",
+    "subject": 3,
+    "item": "L23401",
+    "stem": "【測試資料】L23401 第 4 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 2,
+    "explanation": "測試詳解：L23401 第 4 題。",
+    "related": "測試相關知識：L23401。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23402-1",
+    "subject": 3,
+    "item": "L23402",
+    "stem": "【測試資料】L23402 第 1 題：下列敘述何者正確？\n\n```python\nx = [1, 2, 3]\nprint(sum(x))\n```\n輸出為何？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23402 第 1 題。",
+    "related": "測試相關知識：L23402。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23402-2",
+    "subject": 3,
+    "item": "L23402",
+    "stem": "【測試資料】L23402 第 2 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 0,
+    "explanation": "測試詳解：L23402 第 2 題。",
+    "related": "測試相關知識：L23402。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23402-3",
+    "subject": 3,
+    "item": "L23402",
+    "stem": "【測試資料】L23402 第 3 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 1,
+    "explanation": "測試詳解：L23402 第 3 題。",
+    "related": "測試相關知識：L23402。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23402-4",
+    "subject": 3,
+    "item": "L23402",
+    "stem": "【測試資料】L23402 第 4 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 2,
+    "explanation": "測試詳解：L23402 第 4 題。",
+    "related": "測試相關知識：L23402。",
+    "source": "original"
+  },
+  {
+    "id": "fx-3-L23402-5",
+    "subject": 3,
+    "item": "L23402",
+    "stem": "【測試資料】L23402 第 5 題：下列敘述何者正確？",
+    "options": [
+      "選項甲",
+      "選項乙",
+      "選項丙",
+      "選項丁"
+    ],
+    "answer": 3,
+    "explanation": "測試詳解：L23402 第 5 題。",
+    "related": "測試相關知識：L23402。",
+    "source": "original"
+  }
+]
