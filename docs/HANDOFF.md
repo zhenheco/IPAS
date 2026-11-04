@@ -48,9 +48,11 @@ npm run dev
 ADR 0003 目前是 `proposed`，請確認後改成 `accepted`：
 
 - [ ] 初級與中級**分開販售**通行證（各自計價、各自有效期）。
-- [ ] 初級價格暫定與中級相同（NT$590／早鳥 490／續購 390）。競品初級題庫電子檔只要 NT$79，初級可能要更低價，甚至考慮初級免費、只賣中級。
-- [ ] 續購價**不分級別**（考完初級再買中級也算續購）。
-- [ ] 考試日當天結束後停止販售該梯次。
+- [x] 初級價格：定價 NT$290／早鳥 249／續購 199（擁有者 2026-11-05 確認；中級維持 590／490／390）。
+- [x] 續購價**不分級別**（考完初級再買中級也算續購）（擁有者 2026-11-05 確認）。
+- [x] 考試日當天結束後停止販售該梯次（擁有者 2026-11-05 確認）。
+- [x] 2026-11-14 這一梯不開放付費販售，以下一梯為目標（擁有者 2026-11-05）。
+- [x] 退款資格只在買家實際開始單科模考／全真模考／錯題重做時結束，僅開啟錯題本、弱點分析、讀書計畫不影響（擁有者 2026-11-05）。
 
 價格集中在 `src/lib/pricing.ts` 的 `PRICING.prices`。
 
@@ -71,14 +73,14 @@ ADR 0003 目前是 `proposed`，請確認後改成 `accepted`：
 6. [ ] **PAYUNi sandbox**：取得測試商店 MerID／HashKey／HashIV，實際走一次 購買 → 付款成功 → `/account/` 顯示付費會員；也測付款失敗與重複通知。
 7. [ ] **核對 PAYUNi**：官方文件已於 2026-11-04 核對（`docs/research/payuni-upp-verification.md`），Version 已改 2.0、付款結果判斷已修正、已送 `TradeInvoice=1`。只剩一項需確認：**Notify 要回什麼字串、失敗如何重送**（目前回 `SUCCESS`；官方文件沒寫，需 sandbox 實測或來信 service@payuni.com.tw）。同時在 sandbox 確認 Version 2.0 與 `TradeInvoice=1` 實際可用。
 8. [ ] **統一發票**：PAYUNi 後台啟用自動開立（振禾有限公司，統編 83446730）。
-9. [x] **服務條款／退款政策頁**：已建立 `/terms/`、`/refund/`（最後更新 2026-11-04），頁尾、價目頁、付費牆都有連結，結帳勾選框已改為同意服務條款與退款政策。上線前請自行確認內容（尤其是帳號資料刪除、準據法、非官方網站的說法）。
+9. [x] **服務條款／退款政策／隱私權政策頁**：已建立 `/terms/`、`/refund/`（最後更新 2026-11-05）與 `/privacy/`（生效 2026-11-05，含 AdSense cookie 揭露），頁尾、價目頁、付費牆都有連結，結帳勾選框已改為同意服務條款與退款政策。上線前請自行確認內容（尤其是帳號資料刪除、準據法、非官方網站的說法）。
 10. [ ] **切換部署**：
     ```bash
     PUBLIC_PAYWALL_ENABLED=1 npx astro build && npx wrangler deploy -c wrangler.app.jsonc
     ```
     要回到純靜態版：不設旗標重新建置，再 `npx wrangler deploy`。
 11. [ ] **正式收款**：換正式商店秘密、`PAYUNI_ENV=production`，小額實買一次並退款。
-12. [ ] 設定 `ADMIN_EMAILS`，確認退款標記流程（目前退款要先在 PAYUNi 後台手動退，再呼叫 `POST /api/admin/orders/:id/refunded`）。
+12. [ ] 設定 `ADMIN_EMAILS` 秘密（倉庫為公開，不要寫進 `wrangler.app.jsonc`；`<擁有者管理員 Email>` 換成實際位址）：`printf "%s" "<擁有者管理員 Email>" | npx wrangler secret put ADMIN_EMAILS -c wrangler.app.jsonc`，確認退款標記流程（目前退款要先在 PAYUNi 後台手動退，再呼叫 `POST /api/admin/orders/:id/refunded`）。
 13. [ ] （選用）廣告：建置時加 `PUBLIC_ADSENSE_CLIENT=ca-pub-…`。
 
 ## 之後可以做

@@ -42,10 +42,10 @@ export const isPaidFeature = (f: Feature) => PAID_FEATURES.includes(f);
 export const MODE_FEATURE = { practice: 'practice', exam: 'exam', full: 'full', redo: 'redo' } as const satisfies Record<string, Feature>;
 
 /**
- * 主動使用付費功能（開始單科模考、開啟錯題本等）時應回報 /api/usage/paid-feature，
- * 以停止退款資格。「無廣告」屬被動權益，不算使用。
+ * 只有「開始」單科模考／全真模考／錯題重做的作答時才回報 /api/usage/paid-feature，
+ * 以停止退款資格。開啟錯題本、弱點分析、讀書計畫（僅瀏覽）與「無廣告」不算使用。
  */
-export const countsAsPaidUse = (f: Feature) => isPaidFeature(f) && f !== 'noAds';
+export const countsAsPaidUse = (f: Feature) => f === 'exam' || f === 'full' || f === 'redo';
 
 export type EntitlementMap = Record<PassLevel, { paid: boolean; validUntil: string | null }>;
 

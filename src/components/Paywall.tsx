@@ -1,7 +1,6 @@
 import type { ComponentChildren } from 'preact';
-import { useEffect } from 'preact/hooks';
-import { isEntitled, reportPaidFeatureUseOnce } from '../lib/account';
-import { FEATURE_NAME, PAYWALL_ENABLED, countsAsPaidUse, isPaidFeature, type Feature } from '../lib/entitlement';
+import { isEntitled } from '../lib/account';
+import { FEATURE_NAME, PAYWALL_ENABLED, isPaidFeature, type Feature } from '../lib/entitlement';
 import { PASS_LEVEL_NAME, type PassLevel } from '../lib/pricing';
 import { useAccount } from './useAccount';
 
@@ -11,9 +10,6 @@ import { useAccount } from './useAccount';
  */
 export default function Paywall({ feature, level, children }: { feature: Feature; level: PassLevel; children: ComponentChildren }) {
   const [account] = useAccount();
-  const shown = PAYWALL_ENABLED && countsAsPaidUse(feature) && isEntitled(account, level);
-  // content is displayed to a paying member = paid feature used: ends 退款資格 (no-op unless signed in with a pass for this level)
-  useEffect(() => { if (shown) void reportPaidFeatureUseOnce(level, feature); }, [shown, level, feature]);
   if (!PAYWALL_ENABLED || !isPaidFeature(feature)) return <>{children}</>;
   if (!account) return <p class="muted">載入中…</p>;
   if (isEntitled(account, level)) return <>{children}</>;

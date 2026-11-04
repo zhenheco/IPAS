@@ -16,18 +16,18 @@ export const PRICE_TYPE_NAME: Record<PriceType, string> = { regular: '定價', e
 
 /**
  * 唯一的價格設定。金額為新臺幣整數元（TWD 實務上無小數，PAYUNi TradeAmt 亦為整數元）。
- * 初級價格沿用中級為「推論」，待實際資料修正（ADR 0003）。
+ * 初級價格 290/249/199 為擁有者 2026-11-05 確認（ADR 0003）。
  */
 export const PRICING = {
   prices: {
     intermediate: { regular: 590, early: 490, renewal: 390 },
-    beginner: { regular: 590, early: 490, renewal: 390 },
+    beginner: { regular: 290, early: 249, renewal: 199 },
   } satisfies Record<PassLevel, Record<PriceType, number>>,
   /** 考試日前 N 天（含）以上購買適用早鳥價 */
   earlyBirdDays: 45,
   /** 通行證有效至考試日後 N 天（該日台灣時間 23:59:59.999 止） */
   validDaysAfterExam: 30,
-  /** 購買後 N 天內（以 24 小時計）且未使用付費功能可全額退款 */
+  /** 購買後 N 天內（以 24 小時計）且尚未開始模擬考／全真模考／錯題重做可全額退款 */
   refundWindowDays: 7,
 } as const;
 
@@ -63,7 +63,7 @@ export interface PriceQuote {
  * 計算應付價格：列出所有適用價格後取最低者。
  * - 定價：永遠適用。
  * - 早鳥價：購買日（台灣日曆日）在考試日前 earlyBirdDays 天（含）以上。
- * - 續購價：使用者曾有一筆已付款（未退款）的考期通行證，不限級別（ADR 0003 推論）。
+ * - 續購價：使用者曾有一筆已付款（未退款）的考期通行證，不限級別（ADR 0003，擁有者已確認）。
  * 同額時依 renewal → early → regular 的順序取第一個（僅影響標示，不影響金額）。
  */
 export function quotePrice(o: { level: PassLevel; examDate: string; now: Date; hasPriorPaidPass: boolean }): PriceQuote {
@@ -83,7 +83,7 @@ export function passValidity(examDate: string, purchasedAt: Date): { validFrom: 
 
 /**
  * 是否仍可購買該梯次：梯次開放販售，且尚未過考試日（台灣時間考試日當天仍可購買）。
- * 考後購買的有效期僅剩 30 天且已無備考價值，故不販售（推論）。
+ * 考後購買的有效期僅剩 30 天且已無備考價值，故不販售（ADR 0003，擁有者已確認）。
  */
 export function isPurchasable(s: { examDate: string; saleOpen: boolean }, now: Date): boolean {
   return s.saleOpen && taipeiDate(now) <= s.examDate;
@@ -91,7 +91,7 @@ export function isPurchasable(s: { examDate: string; saleOpen: boolean }, now: D
 
 export type RefundBlock = 'not_paid' | 'window_passed' | 'feature_used' | 'already_requested';
 
-/** 退款資格：已付款、購買後 refundWindowDays×24 小時內、且未曾使用任何付費功能。 */
+/** 退款資格：已付款、購買後 refundWindowDays×24 小時內、且尚未開始任何模擬考／全真模考／錯題重做。 */
 export function refundEligibility(o: {
   status: string;
   paidAt: string | null;
@@ -109,7 +109,7 @@ export function refundEligibility(o: {
 export const REFUND_BLOCK_TEXT: Record<RefundBlock, string> = {
   not_paid: '此訂單尚未付款或已退款',
   window_passed: '已超過購買後 7 天的退款期限',
-  feature_used: '已使用過付費功能，依退款規則不適用全額退款',
+  feature_used: '已開始過模擬考、全真模考或錯題重做，依退款規則不適用全額退款',
   already_requested: '已送出退款申請，處理中',
 };
 

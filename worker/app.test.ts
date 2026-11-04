@@ -56,7 +56,7 @@ describe('pricing + checkout', () => {
     const j = await (await h.fetchApp('/api/pricing')).json() as { sittings: { id: string; level: string; examDate: string; quote: { priceType: string; amount: number }; validUntil: string }[]; signedIn: boolean };
     expect(j.signedIn).toBe(false);
     expect(j.sittings).toHaveLength(2);
-    expect(j.sittings[0]).toMatchObject({ id: 'beginner-2026-11-07', level: 'beginner', examDate: '2026-11-07', quote: { priceType: 'early', amount: 490 }, validUntil: '2026-12-07T15:59:59.999Z' });
+    expect(j.sittings[0]).toMatchObject({ id: 'beginner-2026-11-07', level: 'beginner', examDate: '2026-11-07', quote: { priceType: 'early', amount: 249 }, validUntil: '2026-12-07T15:59:59.999Z' });
     expect(j.sittings[1]).toMatchObject({ id: SITTING, quote: { priceType: 'early', amount: 490 }, validUntil: '2026-12-14T15:59:59.999Z' });
   });
   it('requires same origin, login and explicit consent', async () => {
@@ -196,14 +196,14 @@ describe('renewal, refund, paid-feature usage', () => {
     await s.notify({ merTradeNo: c.merTradeNo, amount: 490 });
     return { ...s, orderId: c.orderId };
   }
-  it('renewal price NT$390 for the next sitting once a pass was paid', async () => {
+  it('renewal price (中級 NT$390, 初級 NT$199) for the next sitting once a pass was paid', async () => {
     const s = await paid();
     s.db.raw.exec(`insert into exam_sittings (id, level, exam_date, name, sale_open, created_at) values ('intermediate-2027-05-22', 'intermediate', '2027-05-22', 'x', 1, 'x'), ('beginner-2027-03-20', 'beginner', '2027-03-20', 'y', 1, 'y')`);
     const j = await (await s.api.get('/api/pricing')).json() as { sittings: { id: string; owned: boolean; purchasable: boolean; quote: { priceType: string; amount: number } }[] };
     expect(j.sittings.map((x) => [x.id, x.owned, x.purchasable, x.quote.priceType, x.quote.amount])).toEqual([
-      ['beginner-2026-11-07', false, true, 'renewal', 390],
+      ['beginner-2026-11-07', false, true, 'renewal', 199],
       [SITTING, true, false, 'renewal', 390], // 已持有：不可再購買
-      ['beginner-2027-03-20', false, true, 'renewal', 390],
+      ['beginner-2027-03-20', false, true, 'renewal', 199],
       ['intermediate-2027-05-22', false, true, 'renewal', 390],
     ]);
     const c = await s.checkout('intermediate-2027-05-22');
@@ -228,6 +228,9 @@ describe('renewal, refund, paid-feature usage', () => {
     const s = await paid();
     expect(await (await s.api.post('/api/usage/paid-feature', { level: 'beginner', feature: 'exam' })).json()).toEqual({ recorded: 0 });
     expect((await s.api.post('/api/usage/paid-feature', { level: 'intermediate', feature: 'noAds' })).status).toBe(400);
+    // viewing-only features must not end eligibility, even if a client posts them
+    for (const feature of ['wrongbook', 'weakness', 'plan']) expect((await s.api.post('/api/usage/paid-feature', { level: 'intermediate', feature })).status).toBe(400);
+    expect(s.rows('select first_paid_feature_used_at from passes')).toEqual([{ first_paid_feature_used_at: null }]);
     expect(await (await s.api.post('/api/usage/paid-feature', { level: 'intermediate', feature: 'exam' })).json()).toEqual({ recorded: 1 });
     s.clock.now = new Date('2026-09-01T05:00:00Z');
     expect(await (await s.api.post('/api/usage/paid-feature', { level: 'intermediate', feature: 'full' })).json()).toEqual({ recorded: 0 });

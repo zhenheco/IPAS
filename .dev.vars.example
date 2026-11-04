@@ -19,3 +19,7 @@ PAYUNI_HASH_IV=
 # 本機開發可不填，設 EMAIL_PROVIDER=console 改印在終端機。
 CF_EMAIL_API_KEY=
 EMAIL_PROVIDER=console
+
+# 擁有者（管理員）Email，逗號分隔；用於標記退款的 /api/admin/*。倉庫為公開，勿寫進 wrangler.app.jsonc 的 vars，
+# 正式環境以 `printf "%s" "<管理員 Email>" | npx wrangler secret put ADMIN_EMAILS -c wrangler.app.jsonc` 設定。
+ADMIN_EMAILS=admin@example.com

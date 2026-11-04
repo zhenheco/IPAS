@@ -13,8 +13,9 @@ describe('feature boundary', () => {
     for (const f of ['exam', 'full', 'wrongbook', 'redo', 'weakness', 'plan', 'noAds'] as Feature[]) expect(isPaidFeature(f)).toBe(true);
     expect(isPaidFeature('practice')).toBe(false);
   });
-  it('無廣告 is a passive perk, not a paid-feature use', () => {
-    expect(PAID_FEATURES.filter(countsAsPaidUse)).toEqual(['exam', 'full', 'wrongbook', 'redo', 'weakness', 'plan']);
+  it('only starting a 模擬考 / 全真模考 / 錯題重做 session counts as paid use; viewing 錯題本 / 弱點分析 / 讀書計畫 and 無廣告 do not', () => {
+    expect(PAID_FEATURES.filter(countsAsPaidUse)).toEqual(['exam', 'full', 'redo']);
+    for (const f of ['wrongbook', 'weakness', 'plan', 'noAds', 'practice', 'history'] as Feature[]) expect(countsAsPaidUse(f)).toBe(false);
   });
   it('canUse: everything when paywall disabled', () => {
     expect(canUse('exam', 'intermediate', null, false)).toBe(true);

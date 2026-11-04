@@ -15,8 +15,8 @@ import { createOrder, fulfilPayment, getMe, listOffers, markRefunded, recordPaid
 import { buildCheckout, checkoutHtml, verifyPayuniForm, type PayuniConfig } from './payuni';
 import { parseSyncBody, syncUser, loadSync } from './sync';
 
-/** 主動使用即視為「已使用付費功能」的功能；須與 src/lib/entitlement.ts 的 countsAsPaidUse 一致（測試會比對） */
-export const PAID_USE_FEATURES = ['exam', 'full', 'wrongbook', 'redo', 'weakness', 'plan'] as const;
+/** 開始作答即視為「已使用付費功能」的功能；須與 src/lib/entitlement.ts 的 countsAsPaidUse 一致（測試會比對） */
+export const PAID_USE_FEATURES = ['exam', 'full', 'redo'] as const;
 
 export interface AppDeps {
   now?: () => Date;

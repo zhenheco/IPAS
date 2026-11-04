@@ -34,8 +34,7 @@
     // cf-email | console（cf-email 還需 CF_EMAIL_API_KEY 秘密）
     "EMAIL_PROVIDER": "cf-email",
     // 純位址；中繼會移除顯示名稱
-    "EMAIL_FROM": "no-reply@zhenhe-co.com",
-    "ADMIN_EMAILS": ""
+    "EMAIL_FROM": "no-reply@zhenhe-co.com"
   },
   "routes": [
     { "pattern": "ipas.zhenhe-co.com", "custom_domain": true },

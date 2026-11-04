@@ -47,12 +47,16 @@ describe('quotePrice', () => {
   it('picks the lowest even if config makes early cheaper than renewal', () => {
     const saved = { ...PRICING.prices.beginner };
     const p = PRICING.prices.beginner as { regular: number; early: number; renewal: number };
-    p.early = 300;
-    try { expect(q(tw(addDays(EXAM, -100)), true, 'beginner')).toMatchObject({ priceType: 'early', amount: 300 }); }
+    p.early = 150;
+    try { expect(q(tw(addDays(EXAM, -100)), true, 'beginner')).toMatchObject({ priceType: 'early', amount: 150 }); }
     finally { Object.assign(p, saved); }
   });
-  it('beginner defaults to the intermediate prices', () => {
-    expect(PRICING.prices.beginner).toEqual(PRICING.prices.intermediate);
+  it('owner-confirmed prices (2026-11-05): 初級 290/249/199, 中級 590/490/390', () => {
+    expect(PRICING.prices.beginner).toEqual({ regular: 290, early: 249, renewal: 199 });
+    expect(PRICING.prices.intermediate).toEqual({ regular: 590, early: 490, renewal: 390 });
+    expect(q(tw(addDays(EXAM, -100)), false, 'beginner')).toMatchObject({ priceType: 'early', amount: 249 });
+    expect(q(tw(addDays(EXAM, -1)), false, 'beginner')).toMatchObject({ priceType: 'regular', amount: 290 });
+    expect(q(tw(addDays(EXAM, -1)), true, 'beginner')).toMatchObject({ priceType: 'renewal', amount: 199 });
   });
 });
 

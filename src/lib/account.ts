@@ -57,8 +57,9 @@ export function isEntitled(a: AccountState | null, level: PassLevel): boolean {
 const json = (body: unknown): RequestInit => ({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
 
 /**
- * 主動使用付費功能時呼叫（開始單科模考、全真模考、錯題重做，開啟錯題本、弱點分析、讀書計畫），
- * 讓伺服器記錄首次使用時間（之後即不適用退款）。失敗不影響使用。
+ * 開始單科模考、全真模考、錯題重做的作答時呼叫，讓伺服器記錄首次使用時間（之後即不適用退款）。
+ * 僅瀏覽錯題本、弱點分析、讀書計畫不算。失敗不影響使用。
+ * keepalive：呼叫端不等待結果就導向 /session/，要讓請求不被換頁中斷。
  */
 export async function reportPaidFeatureUse(
   level: PassLevel, feature: Feature, fetchImpl: FetchLike = defaultFetch, enabled = PAYWALL_ENABLED, account: () => Promise<AccountState> = getAccount,
@@ -66,21 +67,7 @@ export async function reportPaidFeatureUse(
   if (!enabled || !countsAsPaidUse(feature)) return false;
   const a = await account();
   if (a.status !== 'signed-in' || !a.me.entitlements[level]?.paid) return false;
-  try { return (await fetchImpl('/api/usage/paid-feature', json({ level, feature }))).ok; } catch { return false; }
-}
-
-const reportedUse = new Set<string>();
-export const resetPaidUseReports = () => reportedUse.clear();
-
-/**
- * <Paywall> 實際顯示付費功能內容時呼叫：同一頁面同一級別＋功能只回報一次（重新渲染不重送），失敗則下次再試。
- * 伺服器只記錄每張通行證的第一次使用，所以多次回報也不會改變首次使用時間。
- */
-export async function reportPaidFeatureUseOnce(level: PassLevel, feature: Feature, ...rest: Parameters<typeof reportPaidFeatureUse> extends [unknown, unknown, ...infer R] ? R : never): Promise<void> {
-  const key = `${level}:${feature}`;
-  if (reportedUse.has(key)) return;
-  reportedUse.add(key);
-  if (!(await reportPaidFeatureUse(level, feature, ...rest))) reportedUse.delete(key);
+  try { return (await fetchImpl('/api/usage/paid-feature', { ...json({ level, feature }), keepalive: true })).ok; } catch { return false; }
 }
 
 export async function signOut(fetchImpl: FetchLike = defaultFetch) {

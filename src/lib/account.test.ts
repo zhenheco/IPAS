@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fetchAccount, isEntitled, reportPaidFeatureUse, reportPaidFeatureUseOnce, resetPaidUseReports, safeNext, syncWithAccount, type AccountState, type Me } from './account';
+import { fetchAccount, isEntitled, reportPaidFeatureUse, safeNext, syncWithAccount, type AccountState, type Me } from './account';
 
 const jsonRes = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 const me: Me = {
@@ -58,45 +58,30 @@ describe('safeNext', () => {
 
 describe('reportPaidFeatureUse', () => {
   const signedIn = async (): Promise<AccountState> => ({ status: 'signed-in', me });
-  const calls = () => { const c: { url: string; body: unknown }[] = []; return { c, f: async (url: string, init?: RequestInit) => { c.push({ url, body: JSON.parse(String(init?.body)) }); return jsonRes(200, { ok: true }); } }; };
+  const calls = () => { const c: { url: string; body: unknown }[] = []; const inits: (RequestInit | undefined)[] = []; return { c, inits, f: async (url: string, init?: RequestInit) => { inits.push(init); c.push({ url, body: JSON.parse(String(init?.body)) }); return jsonRes(200, { ok: true }); } }; };
 
   it('posts the 級別 and feature when the member holds a pass for that 級別', async () => {
     const { c, f } = calls();
-    expect(await reportPaidFeatureUse('intermediate', 'wrongbook', f, true, signedIn)).toBe(true);
-    expect(c).toEqual([{ url: '/api/usage/paid-feature', body: { level: 'intermediate', feature: 'wrongbook' } }]);
+    expect(await reportPaidFeatureUse('intermediate', 'exam', f, true, signedIn)).toBe(true);
+    expect(c).toEqual([{ url: '/api/usage/paid-feature', body: { level: 'intermediate', feature: 'exam' } }]);
   });
-  it('does nothing while the paywall is off, for anonymous users, for a 級別 without a pass, or for 無廣告 / free features', async () => {
+  it('sends keepalive so the request survives the navigation to /session/ that follows a session start', async () => {
+    const { inits, f } = calls();
+    await reportPaidFeatureUse('intermediate', 'exam', f, true, signedIn);
+    expect(inits[0]).toMatchObject({ method: 'POST', keepalive: true });
+  });
+  it('does nothing while the paywall is off, for anonymous users, for a 級別 without a pass, or for 無廣告 / free features / viewing-only features (錯題本, 弱點分析, 讀書計畫)', async () => {
     const { c, f } = calls();
     expect(await reportPaidFeatureUse('intermediate', 'weakness', f, false, signedIn)).toBe(false);
     expect(await reportPaidFeatureUse('intermediate', 'weakness', f, true, async () => ({ status: 'anonymous' }))).toBe(false);
     expect(await reportPaidFeatureUse('beginner', 'weakness', f, true, signedIn)).toBe(false);
     expect(await reportPaidFeatureUse('intermediate', 'noAds', f, true, signedIn)).toBe(false);
     expect(await reportPaidFeatureUse('intermediate', 'practice', f, true, signedIn)).toBe(false);
+    for (const v of ['wrongbook', 'weakness', 'plan'] as const) expect(await reportPaidFeatureUse('intermediate', v, f, true, signedIn)).toBe(false);
     expect(c).toEqual([]);
   });
   it('returns false (and does not throw) when the request fails', async () => {
-    expect(await reportPaidFeatureUse('intermediate', 'plan', async () => { throw new TypeError('offline'); }, true, signedIn)).toBe(false);
-    expect(await reportPaidFeatureUse('intermediate', 'plan', async () => jsonRes(500, {}), true, signedIn)).toBe(false);
-  });
-});
-
-describe('reportPaidFeatureUseOnce (Paywall shows the content)', () => {
-  const signedIn = async (): Promise<AccountState> => ({ status: 'signed-in', me });
-  it('reports each 級別 + feature once per page, so re-renders do not repeat the call', async () => {
-    resetPaidUseReports();
-    let n = 0;
-    const f = async () => { n++; return jsonRes(200, { ok: true }); };
-    await reportPaidFeatureUseOnce('intermediate', 'weakness', f, true, signedIn);
-    await reportPaidFeatureUseOnce('intermediate', 'weakness', f, true, signedIn);
-    expect(n).toBe(1);
-    await reportPaidFeatureUseOnce('intermediate', 'plan', f, true, signedIn);
-    expect(n).toBe(2);
-  });
-  it('tries again after a failed report', async () => {
-    resetPaidUseReports();
-    let n = 0;
-    await reportPaidFeatureUseOnce('intermediate', 'wrongbook', async () => { n++; return jsonRes(500, {}); }, true, signedIn);
-    await reportPaidFeatureUseOnce('intermediate', 'wrongbook', async () => { n++; return jsonRes(200, {}); }, true, signedIn);
-    expect(n).toBe(2);
+    expect(await reportPaidFeatureUse('intermediate', 'redo', async () => { throw new TypeError('offline'); }, true, signedIn)).toBe(false);
+    expect(await reportPaidFeatureUse('intermediate', 'redo', async () => jsonRes(500, {}), true, signedIn)).toBe(false);
   });
 });

@@ -49,11 +49,11 @@ D1 不支援互動式交易，需要「全部成功或全部失敗」的寫入�
 
 ## 定價規則（`src/lib/pricing.ts`）
 
-| | 中級 | 初級（推論，ADR 0003） |
+| | 中級 | 初級（擁有者 2026-11-05 確認，ADR 0003） |
 |---|---|---|
-| 定價 | NT$590 | NT$590 |
-| 早鳥價（考試日前 45 天含以上） | NT$490 | NT$490 |
-| 續購價（曾有已付款且未退款的通行證，不分級別） | NT$390 | NT$390 |
+| 定價 | NT$590 | NT$290 |
+| 早鳥價（考試日前 45 天含以上） | NT$490 | NT$249 |
+| 續購價（曾有已付款且未退款的通行證，不分級別） | NT$390 | NT$199 |
 
 - 列出所有適用的價格後**取最低**；目前續購價最低，所以續購價優先於早鳥價。
 - 「前 45 天」以購買當下的台灣日曆日與考試日相差天數計算。
@@ -93,7 +93,7 @@ D1 不支援互動式交易，需要「全部成功或全部失敗」的寫入�
 ### 退款
 
 1. 資格（`refundEligibility`）：訂單已付款、付款後 7×24 小時內、該通行證 `first_paid_feature_used_at` 為空、尚未申請過。
-2. 前端在使用付費功能時呼叫 `reportPaidFeatureUse(level, feature)`：開始單科模考／全真模考／錯題重做（`beginSession`），以及 `<Paywall>` 對有通行證的會員實際顯示單科模考、全真模考、錯題本、錯題重做、弱點分析、讀書計畫內容時（`reportPaidFeatureUseOnce`，同頁同級別同功能只送一次）。呼叫 `POST /api/usage/paid-feature` → `POST /api/usage/paid-feature`，記錄該級別有效通行證的首次使用時間（只記第一次）；「無廣告」不算使用。
+2. 只有「開始」單科模考／全真模考／錯題重做的作答時，前端才呼叫 `reportPaidFeatureUse(level, feature)`（`beginSession`）→ `POST /api/usage/paid-feature`，記錄該級別有效通行證的首次使用時間（只記第一次）。開啟錯題本、弱點分析、讀書計畫（`<Paywall>` 顯示內容）不回報；Worker 的 `PAID_USE_FEATURES` 僅接受 `exam`／`full`／`redo`，其餘功能名稱回 400，前端無法藉此結束退款資格；「無廣告」不算使用。
 3. 使用者在 `/account/` 按「申請退款」→ `POST /api/refund-request`，訂單記錄 `refund_requested_at`、`refund_reason`。
 4. 擁有者在 PAYUNi 後台退款後，以 `ADMIN_EMAILS` 中的帳號（email 需已驗證）呼叫 `POST /api/admin/orders/:id/refunded`（同一 batch：訂單 → refunded、通行證 → revoked）。例如在已登入的 `/account/` 頁面於瀏覽器 console 執行：
    ```js
@@ -113,9 +113,9 @@ D1 不支援互動式交易，需要「全部成功或全部失敗」的寫入�
 
 ## 環境變數與秘密
 
-`vars`（`wrangler.app.jsonc`）：`BETTER_AUTH_URL`（網站網址）、`PAYUNI_ENV`（sandbox/production）、`EMAIL_PROVIDER`、`EMAIL_FROM`、`ADMIN_EMAILS`。
+`vars`（`wrangler.app.jsonc`）：`BETTER_AUTH_URL`（網站網址）、`PAYUNI_ENV`（sandbox/production）、`EMAIL_PROVIDER`、`EMAIL_FROM`。
 
-秘密（`npx wrangler secret put <NAME> -c wrangler.app.jsonc`，本機放 `.dev.vars`，範本 `.dev.vars.example`）：`BETTER_AUTH_SECRET`、`GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`、`PAYUNI_MER_ID`、`PAYUNI_HASH_KEY`、`PAYUNI_HASH_IV`、`CF_EMAIL_API_KEY`。
+秘密（`npx wrangler secret put <NAME> -c wrangler.app.jsonc`，本機放 `.dev.vars`，範本 `.dev.vars.example`）：`BETTER_AUTH_SECRET`、`GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`、`PAYUNI_MER_ID`、`PAYUNI_HASH_KEY`、`PAYUNI_HASH_IV`、`CF_EMAIL_API_KEY`、`ADMIN_EMAILS`（擁有者 Email，逗號分隔；倉庫為公開，不可寫進 `vars`，且同名 var 與 secret 會衝突）。
 
 前端建置時變數（Astro `PUBLIC_*`）：`PUBLIC_PAYWALL_ENABLED=1` 啟用付費機制；`PUBLIC_ADSENSE_CLIENT=ca-pub-…` 啟用廣告。
 
@@ -161,8 +161,8 @@ VALUES ('intermediate-2027-05-22', 'intermediate', '2027-05-22', '2027 年 5 月
    - 確認 PAYUNi 後台已啟用自動開立統一發票（振禾有限公司，統編 83446730）。
 6. **切換部署**：`PUBLIC_PAYWALL_ENABLED=1 npx astro build && npx wrangler deploy -c wrangler.app.jsonc`（Worker 名稱同為 `ipas`，路由相同，會取代純靜態版本；回退時改用 `npx wrangler deploy`（`wrangler.jsonc`）並以未設旗標的建置部署即可）。
 7. **正式收款**：換成正式商店秘密、`PAYUNI_ENV=production`，以小額實際購買並退款一次。
-8. 設定 `ADMIN_EMAILS`，確認退款標記流程。
-9. 退款、鑑賞期同意與付費功能說明已寫入服務條款／退款政策頁（`src/pages/terms.astro`、`src/pages/refund.astro`）；調整退款規則或價格時需同步檢查這兩頁與結帳勾選文字（`src/components/Pricing.tsx`）。
+8. 設定 `ADMIN_EMAILS` 秘密（`printf "%s" "<擁有者管理員 Email>" | npx wrangler secret put ADMIN_EMAILS -c wrangler.app.jsonc`），確認退款標記流程。
+9. 退款、鑑賞期同意與付費功能說明已寫入服務條款／退款政策頁（`src/pages/terms.astro`、`src/pages/refund.astro`），資料蒐集、cookie 與 AdSense 揭露在隱私權政策頁（`src/pages/privacy.astro`）；調整退款規則或價格時需同步檢查這些頁面與結帳勾選文字（`src/components/Pricing.tsx`）。
 
 ## PAYUNi 官方文件核對結果（2026-11-04）
 
@@ -188,7 +188,6 @@ VALUES ('intermediate-2027-05-22', 'intermediate', '2027-05-22', '2027 年 5 月
 
 ## 其他推論（非 PAYUNi）
 
-- 初級價格與中級相同、續購價不分級別、考試日結束後停止販售（ADR 0003）。
 - 「7 天內」以付款時間起算 7×24 小時。
 - 有效期「考試日後 30 天止」解讀為考試日 + 30 天的台灣時間當日結束。
 - 已退款的訂單不算「曾購買」，不適用續購價。

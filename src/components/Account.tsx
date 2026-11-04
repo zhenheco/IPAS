@@ -69,7 +69,7 @@ function Orders({ me, onChange }: { me: Me; onChange: () => void }) {
           </tbody>
         </table>
       </div>
-      <p class="muted">退款規則：購買後 7 天內、且未使用任何付費功能可全額退款。</p>
+      <p class="muted">退款規則：購買後 7 天內、且尚未開始單科模考、全真模考或錯題重做可全額退款。</p>
     </>
   );
 }

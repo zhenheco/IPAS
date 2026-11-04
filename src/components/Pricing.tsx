@@ -39,7 +39,7 @@ function Rules() {
       <li>考期通行證：一次付款，涵蓋該級別所有科目、單一梯次，自購買起至考試日後 {PRICING.validDaysAfterExam} 天止。初級與中級分開購買。</li>
       <li>早鳥價：考試日前 {PRICING.earlyBirdDays} 天（含）以上購買。續購價：曾購買過考期通行證者。多項適用時取最低價。</li>
       <li>付費功能：單科模考、全真模考、錯題本、錯題重做、弱點分析、讀書計畫，且在持有通行證的級別不顯示廣告（初級與中級分開計算）。練習與作答歷史永遠免費。</li>
-      <li>退款：購買後 {PRICING.refundWindowDays} 天內、且尚未使用任何付費功能，可全額退款。詳見<a href="/refund/">退款政策</a>與<a href="/terms/">服務條款</a>。</li>
+      <li>退款：購買後 {PRICING.refundWindowDays} 天內、且尚未開始單科模考、全真模考或錯題重做，可全額退款（開啟錯題本、弱點分析、讀書計畫不影響）。詳見<a href="/refund/">退款政策</a>與<a href="/terms/">服務條款</a>。</li>
       <li>收款與發票：振禾有限公司（統編 83446730）透過 PAYUNi 收款，自動開立電子發票。</li>
     </ul>
   );
