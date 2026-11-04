@@ -1,4 +1,5 @@
-export type Subject = 1 | 2 | 3;
+/** 中級 1-3 (L21-L23), 初級 11-12 (L11-L12); see levels.ts */
+export type Subject = 1 | 2 | 3 | 11 | 12;
 export type Mode = 'practice' | 'exam' | 'full' | 'redo';
 
 export interface Question {
@@ -30,6 +31,8 @@ export interface Session {
   answers: (number | null)[];
   score: number;
   fullId?: string;
+  /** fixed 模擬試卷 id, when the session used one */
+  paperId?: string;
 }
 
 /** Per-question stats, keyed by question id in AppState.questionStats. */
@@ -54,11 +57,13 @@ export interface ActiveSession {
   answers: (number | null)[];
   flagged: boolean[];
   fullId?: string;
+  paperId?: string;
 }
 
 export interface FullExam {
   id: string;
-  elective: 2 | 3;
+  /** second 科目 (中級 2 or 3, 初級 12); the first is fullFirstOf(elective) */
+  elective: Subject;
   stage: 'section1' | 'break' | 'section2' | 'done';
   breakDeadline: number | null;
 }
@@ -71,7 +76,11 @@ export interface AppState {
   fullExam: FullExam | null;
 }
 
+/** A fixed 模擬試卷: 50 question ids drawn once with the 知識點 distribution, stable across builds. */
+export interface Paper { id: string; subject: Subject; no: number; questionIds: string[] }
+
 export interface Bank {
   questions: Question[];
   syllabus: Syllabus;
+  papers: Paper[];
 }

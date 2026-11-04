@@ -25,10 +25,10 @@ export const QUESTION_SCHEMA = {
   additionalProperties: false,
 } as const;
 
-const BASE_RULES = `你是 iPAS「AI 應用規劃師」中級的資深命題委員，負責為本站撰寫原創練習題。所有文字使用繁體中文（台灣用語），專有名詞可附英文。
+const BASE_RULES = `你是 iPAS「AI 應用規劃師」{LEVEL}的資深命題委員，負責為本站撰寫原創練習題。所有文字使用繁體中文（台灣用語），專有名詞可附英文。
 
 命題規則：
-1. 難度對標中級正式考試：每科 50 題單選題，每題四個選項、只有一個正確答案。題目要能區分「真正理解」與「死背名詞」，不要只考名詞定義的逐字背誦。
+1. 難度對標{LEVEL}正式考試：每科 50 題單選題，每題四個選項、只有一個正確答案。題目要能區分「真正理解」與「死背名詞」，不要只考名詞定義的逐字背誦。
 2. 題型要混合：概念辨析題、情境應用題（給一段企業或專案情境，問最適當的做法或判斷）、計算題（給數字，要求算出結果、比較或判讀指標）。若該知識點不適合計算，以情境應用題取代，不要硬湊不合理的數字。
 3. 完全原創：不得抄襲、改寫或默寫任何既有考題、歷屆試題、教科書或網頁文字；題幹情境與數字都要自行設計。
 4. 選項要彼此平行：長度相近、句型一致、語氣相同，不可讓正確答案特別長或特別詳細；干擾選項要似是而非（常見迷思、容易混淆的概念），而不是明顯荒謬。不要使用「以上皆是」「以上皆非」，選項文字內不要加 A/B/C/D 或 1/2/3/4 標號。
@@ -38,6 +38,10 @@ const BASE_RULES = `你是 iPAS「AI 應用規劃師」中級的資深命題委�
 8. related（相關知識）：80 至 200 字，補充該題所屬知識點中值得延伸複習的概念，不可直接重述答案。
 9. 同一批題目彼此不可重複同一考法或同一情境，也要避開使用者列出的「已出過的題幹」。
 10. 只依使用者指定的知識點命題，不要跨到其他知識點。`;
+
+const BEGINNER_RULES = `
+
+初級的額外規則：考生多為非資訊背景的職場人士與學生，重概念理解與職場應用判斷。不出程式碼題、不考複雜數學推導；計算題只限簡單比例、準確率、精確率、召回率等基本判讀。否定題（何者「不」正確）不超過兩成，且須以引號強調「不」。`;
 
 const CODE_RULES = `
 
@@ -52,6 +56,13 @@ export function balancedPositions(n: number, rng: () => number = Math.random): n
     [p[i], p[j]] = [p[j]!, p[i]!];
   }
   return p;
+}
+
+export function systemPrompt(n: number): string {
+  const beginner = n >= 11;
+  const base = BASE_RULES.replaceAll("{LEVEL}", beginner ? "初級" : "中級");
+  if (beginner) return base + BEGINNER_RULES;
+  return n === 3 ? base + CODE_RULES : base;
 }
 
 export interface RequestArgs {
@@ -78,7 +89,7 @@ ${positions.map((p, i) => `第 ${i + 1} 題 answer = ${p}`).join("\n")}${seen}`;
     max_tokens: 64000,
     // Opus 5.5 always thinks; its default effort is medium, so set it explicitly.
     output_config: { effort: "high" as const, format: { type: "json_schema" as const, schema: QUESTION_SCHEMA as unknown as Record<string, unknown> } },
-    system: subject.subject === 3 ? BASE_RULES + CODE_RULES : BASE_RULES,
+    system: systemPrompt(subject.subject),
     messages: [{ role: "user" as const, content }],
   };
 }

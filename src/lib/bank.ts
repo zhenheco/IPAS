@@ -1,10 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Bank, Question, Syllabus } from './types';
+import { isSubject } from './levels';
+import type { Bank, Paper, Question, Syllabus } from './types';
 
 export function isValidQuestion(x: unknown): x is Question {
   const q = x as Question;
-  return !!q && typeof q === 'object' && typeof q.id === 'string' && [1, 2, 3].includes(q.subject) && typeof q.item === 'string' &&
+  return !!q && typeof q === 'object' && typeof q.id === 'string' && isSubject(q.subject) && typeof q.item === 'string' &&
     typeof q.stem === 'string' && Array.isArray(q.options) && q.options.length === 4 && q.options.every((o) => typeof o === 'string') &&
     Number.isInteger(q.answer) && q.answer >= 0 && q.answer <= 3 && (q.source === 'original' || q.source === 'official');
 }
@@ -46,7 +47,15 @@ export function loadBank(o: LoadOptions): Bank {
     }
   }
   const syl = readJson(path.join(root, 'syllabus.json')) as Syllabus | undefined;
-  return { questions, syllabus: syl && Array.isArray(syl.subjects) ? syl : { subjects: [] } };
+  return { questions, syllabus: syl && Array.isArray(syl.subjects) ? syl : { subjects: [] }, papers: loadPapers(root, seen) };
+}
+
+/** data/papers.json; a paper with any id missing from the bank is dropped (it would no longer be the same paper). */
+function loadPapers(root: string, ids: Set<string>): Paper[] {
+  const data = readJson(path.join(root, 'papers.json'));
+  return (Array.isArray(data) ? data : []).filter((p): p is Paper =>
+    !!p && typeof p.id === 'string' && isSubject(p.subject) && Number.isInteger(p.no) &&
+    Array.isArray(p.questionIds) && p.questionIds.length > 0 && p.questionIds.every((id: unknown) => typeof id === 'string' && ids.has(id)));
 }
 
 /** Production build gate: the real data must be present, otherwise the site would ship empty. */

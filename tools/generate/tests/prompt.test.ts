@@ -1,6 +1,6 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { describe, expect, it } from "vitest";
-import { balancedPositions, buildRequest } from "../src/prompt.js";
+import { balancedPositions, buildRequest, systemPrompt } from "../src/prompt.js";
 import { getSubject, subjectItems } from "../src/syllabus.js";
 import { syllabus } from "./helpers.js";
 
@@ -67,5 +67,18 @@ describe("buildRequest", () => {
     expect(req.system + req.messages[0].content).toMatch(/scikit-learn/);
     const r1 = buildRequest(args(1));
     expect(r1.system + r1.messages[0].content).not.toMatch(/scikit-learn/);
+  });
+});
+
+describe("systemPrompt by level", () => {
+  it("初級 subjects get 初級 rules and no code-reading rule", () => {
+    const p = systemPrompt(11);
+    expect(p).toContain("初級");
+    expect(p).not.toContain("中級");
+    expect(p).not.toContain("```python");
+  });
+  it("中級 subject 3 keeps the code-reading rule", () => {
+    expect(systemPrompt(3)).toContain("中級");
+    expect(systemPrompt(3)).toContain("```python");
   });
 });

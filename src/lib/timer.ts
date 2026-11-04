@@ -1,3 +1,4 @@
+/** 中級 time limit; per-科目 limits come from levels.ts examCapMs */
 export const EXAM_CAP_MS = 90 * 60_000;
 export const BREAK_CAP_MS = 30 * 60_000;
 

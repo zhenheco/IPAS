@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { runGeneration, type GenerationResult } from "./generate.js";
 import { loadSyllabus } from "./syllabus.js";
+import { SUBJECT_NOS, type SubjectNo } from "./types.js";
 
 export function requireApiKey(env: Record<string, string | undefined>): string {
   const key = env.ANTHROPIC_API_KEY?.trim();
@@ -10,7 +11,7 @@ export function requireApiKey(env: Record<string, string | undefined>): string {
   return key;
 }
 
-export interface Args { subject: 1 | 2 | 3; total: number; concurrency: number }
+export interface Args { subject: SubjectNo; total: number; concurrency: number }
 
 export function parseArgs(argv: string[]): Args {
   const v: Record<string, string> = {};
@@ -25,8 +26,8 @@ export function parseArgs(argv: string[]): Args {
     return Number(raw);
   };
   const subject = int("subject");
-  if (subject > 3) throw new Error("--subject must be 1, 2 or 3");
-  return { subject: subject as 1 | 2 | 3, total: int("total"), concurrency: int("concurrency", 4) };
+  if (!SUBJECT_NOS.includes(subject as SubjectNo)) throw new Error("--subject must be 1, 2, 3 (中級) or 11, 12 (初級)");
+  return { subject: subject as SubjectNo, total: int("total"), concurrency: int("concurrency", 4) };
 }
 
 export function formatSummary(r: GenerationResult): string {

@@ -6,7 +6,7 @@ import { MODEL, balancedPositions, buildRequest } from "./prompt.js";
 import { withRetry } from "./retry.js";
 import { readQuestions, writeJsonAtomic } from "./store.js";
 import { getSubject, subjectItems } from "./syllabus.js";
-import type { Question, RawQuestion, Syllabus, Usage } from "./types.js";
+import type { Question, RawQuestion, SubjectNo, Syllabus, Usage } from "./types.js";
 import { QuestionValidator } from "./validate.js";
 
 /** A failed batch that is worth another round (bad JSON, truncated, refused); everything else aborts the run. */
@@ -18,7 +18,7 @@ export interface GenerationResult { perItem: ItemSummary[]; usage: Usage; shortf
 export interface GenerationOptions {
   client: any; // Anthropic SDK client (only client.beta.messages.stream is used)
   syllabus: Syllabus;
-  subject: 1 | 2 | 3;
+  subject: SubjectNo;
   total: number;
   outFile: string;
   concurrency?: number;

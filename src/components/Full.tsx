@@ -1,17 +1,20 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { QUESTIONS_PER_SESSION, SUBJECT_NAMES } from '../config';
+import { QUESTIONS_PER_SESSION } from '../config';
+import { LEVELS, SUBJECT_INFO, certificateName, fullFirstOf, levelOf, subjectShort } from '../lib/levels';
+import type { Subject } from '../lib/types';
 import { drawQuestions } from '../lib/draw';
 import { startFull } from '../lib/fullexam';
 import { advanceToSection2, createSession, examBlock } from '../lib/session';
 import { filterPool } from '../lib/syllabus';
 import { formatClock, remainingMs } from '../lib/timer';
-import { Card, Loading, SaveWarning, go, isUnsaved, newId, useApp, useBank } from './app';
+import { Card, LevelTabs, Loading, SaveWarning, go, isUnsaved, newId, useApp, useBank, useLevel } from './app';
 import { beginSession } from './start';
 
 export default function Full() {
   const { state, update, saveOk } = useApp();
   const { bank, error } = useBank();
-  const [elective, setElective] = useState<2 | 3>(3);
+  const { level: viewLevel, setLevel } = useLevel(bank?.levels);
+  const [picked, setElective] = useState<Subject | null>(null);
   const [now, setNow] = useState(Date.now());
   const exam = state?.fullExam ?? null;
   const started = useRef(false);
@@ -44,32 +47,38 @@ export default function Full() {
 
   if (!state || !bank) return <Loading state={state} bank={bank} error={error} />;
 
-  const electives = ([3, 2] as const).filter((s) => bank.subjects.includes(s));
+  // an exam in progress pins the level; otherwise the viewer's pick
+  const level = exam && exam.stage !== 'done' ? levelOf(exam.elective) : viewLevel;
+  const info = LEVELS[level];
+  const first = info.fullFirst;
+  const electives = info.fullElectives.filter((s) => bank.subjects.includes(s));
+  const elective: Subject = picked && electives.includes(picked) ? picked : electives[0] ?? info.fullElectives[0]!;
+  const minutes = SUBJECT_INFO[first].minutes;
 
-  const blocks = [examBlock(1, bank.count(1)), examBlock(elective, bank.count(elective))].filter(Boolean) as string[];
+  const blocks = [examBlock(first, bank.count(first)), examBlock(elective, bank.count(elective))].filter(Boolean) as string[];
 
   const start = () => {
     if (blocks.length) return;
     if (state.active && !confirm('這會捨棄目前未完成的作答，確定要開始嗎？')) return;
     const e = startFull(newId(), elective);
-    beginSession(update, { mode: 'full', subject: 1, pool: filterPool(bank.questions, { subject: 1 }), fullId: e.id, fullExam: e });
+    beginSession(update, { mode: 'full', subject: first, pool: filterPool(bank.questions, { subject: first }), fullId: e.id, fullExam: e });
   };
 
   if (exam && exam.stage !== 'done') {
     const inSession = state.active?.fullId === exam.id;
     return (
       <>
-        <h1>全真模考</h1>
+        <h1>全真模考 · {info.name}</h1>
         <SaveWarning ok={saveOk} />
         {exam.stage === 'break' ? (
           <Card>
             <h3>休息中</h3>
             <p class="clock big" role="timer">{formatClock(remainingMs(exam.breakDeadline!, now))}</p>
-            <p class="muted">休息上限 30 分鐘，時間到會自動開始科目{exam.elective}；可提早結束休息。</p>
-            <button class="btn" onClick={startSection2}>結束休息，開始科目{exam.elective}</button>
+            <p class="muted">休息上限 30 分鐘，時間到會自動開始{subjectShort(exam.elective)}；可提早結束休息。</p>
+            <button class="btn" onClick={startSection2}>結束休息，開始{subjectShort(exam.elective)}</button>
           </Card>
         ) : inSession ? (
-          <p class="notice">科目{exam.stage === 'section1' ? 1 : exam.elective}作答進行中。<a class="btn small" href="/session/">繼續作答</a></p>
+          <p class="notice">{subjectShort(exam.stage === 'section1' ? fullFirstOf(exam.elective) : exam.elective)}作答進行中。<a class="btn small" href="/session/">繼續作答</a></p>
         ) : (
           <p class="notice warn">找不到進行中的作答。<button class="btn small" onClick={() => update((s) => ({ ...s, fullExam: null }))}>重置全真模考</button></p>
         )}
@@ -80,22 +89,23 @@ export default function Full() {
   const last = exam ? state.sessions.filter((s) => s.fullId === exam.id).at(-1) : undefined;
   return (
     <>
-      <h1>全真模考</h1>
-        <SaveWarning ok={saveOk} />
+      <h1>全真模考 · {info.name}</h1>
+      <SaveWarning ok={saveOk} />
+      <LevelTabs levels={bank.levels} level={level} onPick={(l) => { setLevel(l); setElective(null); }} />
       <ul class="rules">
-        <li>依序進行科目1（必考）→ 休息（至多 30 分鐘，可提早結束）→ 科目{elective}，各 {QUESTIONS_PER_SESSION} 題、上限 90 分鐘，時間到自動交卷。</li>
+        <li>依序進行{subjectShort(first)}（必考）→ 休息（至多 30 分鐘，可提早結束）→ {subjectShort(elective)}，各 {QUESTIONS_PER_SESSION} 題、上限 {minutes} 分鐘，時間到自動交卷。</li>
         <li>開始時間由你決定；開始後不可暫停。</li>
-        <li>兩科皆 70 分以上，才符合{elective === 3 ? '機器學習' : '數據分析'}證書的及格條件。</li>
+        <li>兩科皆 {SUBJECT_INFO[first].passScore} 分以上，才符合{certificateName(elective)}證書的及格條件。</li>
       </ul>
       {last ? <p class="notice">上一次的全真模考已完成。<a class="btn small" href={`/result/?id=${last.id}`}>查看成績</a></p> : null}
       <Card>
         {electives.length > 1 ? (
           <label class="field">第二科
-            <select value={elective} onChange={(e) => setElective(Number(e.currentTarget.value) as 2 | 3)}>
-              {electives.map((s) => <option key={s} value={s}>科目{s} {SUBJECT_NAMES[s]}</option>)}
+            <select value={elective} onChange={(e) => setElective(Number(e.currentTarget.value) as Subject)}>
+              {electives.map((s) => <option key={s} value={s}>{subjectShort(s)} {SUBJECT_INFO[s].name}</option>)}
             </select>
           </label>
-        ) : <p>科目1 → 科目3 {SUBJECT_NAMES[3]}</p>}
+        ) : <p>{subjectShort(first)} {SUBJECT_INFO[first].name} → {subjectShort(elective)} {SUBJECT_INFO[elective].name}</p>}
         {blocks.map((m) => <p key={m} class="notice warn">{m}</p>)}
         <button class="btn" disabled={blocks.length > 0} onClick={start}>開始全真模考</button>
       </Card>

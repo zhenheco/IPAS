@@ -39,7 +39,7 @@ export async function checkFiles(dir: string, syllabus: Syllabus): Promise<Check
     }
     if (!Array.isArray(data)) { errors.push(`${file}: not a JSON array`); continue; }
     files.push({ file, count: data.length });
-    const forced = /^subject-(\d)\.json$/.exec(file)?.[1];
+    const forced = /^subject-(\d+)\.json$/.exec(file)?.[1];
     data.forEach((q, i) => {
       const bad = validator.check(q, forced ? Number(forced) : undefined);
       if (bad.length) errors.push(`${file}[${i}] ${(q as any)?.id ?? "?"}: ${bad.join("; ")}`);

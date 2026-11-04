@@ -1,7 +1,7 @@
-import type { FullExam } from './types';
+import type { FullExam, Subject } from './types';
 import { BREAK_CAP_MS, section2StartAt } from './timer';
 
-export const startFull = (id: string, elective: 2 | 3): FullExam => ({ id, elective, stage: 'section1', breakDeadline: null });
+export const startFull = (id: string, elective: Subject): FullExam => ({ id, elective, stage: 'section1', breakDeadline: null });
 
 export function afterSectionSubmit(s: FullExam, now: number): FullExam {
   if (s.stage === 'section1') return { ...s, stage: 'break', breakDeadline: now + BREAK_CAP_MS };

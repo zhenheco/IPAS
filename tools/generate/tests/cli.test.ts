@@ -29,3 +29,8 @@ describe("formatSummary", () => {
     expect(out).toContain("SHORTFALL: 1");
   });
 });
+
+describe("parseArgs 初級", () => {
+  it.each([11, 12])("accepts 初級 subject %i", (n) => expect(parseArgs(["--subject", String(n), "--total", "10"]).subject).toBe(n));
+  it.each([4, 10, 13])("rejects subject %i", (n) => expect(() => parseArgs(["--subject", String(n), "--total", "10"])).toThrow());
+});

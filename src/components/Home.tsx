@@ -1,42 +1,54 @@
-import { EXAM_DATE, MODE_LABEL, SUBJECT_NAMES } from '../config';
+import { EXAM_DATES, MODE_LABEL } from '../config';
+import { LEVELS, SUBJECT_INFO, subjectLabel, subjectShort } from '../lib/levels';
+import { isPassed } from '../lib/scoring';
 import { daysUntil } from '../lib/timer';
-import { Badge, Card, Loading, SaveWarning, fmtDate, useApp, useBank } from './app';
+import { Badge, Card, LevelTabs, Loading, SaveWarning, fmtDate, useApp, useBank, useLevel } from './app';
 import { wrongBookIds } from '../lib/wrongbook';
 
 export default function Home() {
   const { state, saveOk } = useApp();
   const { bank, error } = useBank();
+  const { level, setLevel } = useLevel(bank?.levels);
   if (!state || !bank) return <Loading state={state} bank={bank} error={error} />;
 
-  const days = daysUntil(EXAM_DATE, new Date());
+  const info = LEVELS[level];
+  const examDate = EXAM_DATES[level];
+  const days = examDate ? daysUntil(examDate, new Date()) : null;
   const recent = [...state.sessions].reverse().slice(0, 5);
   const active = state.active;
+  const subjects = bank.subjectsOf(level);
+  const first = info.fullFirst;
+  const electives = info.fullElectives.filter((s) => subjects.includes(s));
 
   return (
     <>
       <SaveWarning ok={saveOk} />
-      <Card class="countdown">
-        <div class="muted">考試倒數 · {EXAM_DATE.replaceAll('-', '/')} 梯次</div>
-        <div class="big">{days > 0 ? <>還有 <b>{days}</b> 天</> : days === 0 ? <b>今天考試，加油！</b> : <b>本梯次已結束</b>}</div>
-      </Card>
+      <LevelTabs levels={bank.levels} level={level} onPick={setLevel} />
+      {examDate && days !== null ? (
+        <Card class="countdown">
+          <div class="muted">{info.name}考試倒數 · {examDate.replaceAll('-', '/')} 梯次</div>
+          <div class="big">{days > 0 ? <>還有 <b>{days}</b> 天</> : days === 0 ? <b>今天考試，加油！</b> : <b>本梯次已結束</b>}</div>
+        </Card>
+      ) : null}
 
       {active ? (
         <p class="notice">
-          有一份未完成的{MODE_LABEL[active.mode]}（科目{active.subject}）。<a class="btn small" href="/session/">繼續作答</a>
+          有一份未完成的{MODE_LABEL[active.mode]}（{subjectLabel(active.subject)}）。<a class="btn small" href="/session/">繼續作答</a>
         </p>
       ) : null}
 
       {bank.questions.length === 0 ? <p class="notice warn">題庫目前沒有題目。</p> : null}
 
-      <h2>選擇科目</h2>
+      <h2>選擇科目 · {info.name}</h2>
       <div class="grid">
-        {bank.subjects.map((s) => {
+        {subjects.map((s) => {
           const n = bank.count(s);
+          const papers = bank.papersOf(s).length;
           return (
             <Card key={s}>
-              <h3>科目{s}</h3>
-              <p>{SUBJECT_NAMES[s]}</p>
-              <p class="muted">題庫 {n} 題 · 錯題本 {wrongBookIds(state.questionStats, bank.byId, s).length} 題</p>
+              <h3>{subjectShort(s)}</h3>
+              <p>{SUBJECT_INFO[s].name}</p>
+              <p class="muted">題庫 {n} 題{papers ? ` · 模擬試卷 ${papers} 回` : ''} · 錯題本 {wrongBookIds(state.questionStats, bank.byId, s).length} 題</p>
               <div class="row">
                 <a class="btn" href={`/practice/?subject=${s}`}>練習</a>
                 <a class="btn ghost" href={`/exam/?subject=${s}`}>單科模考</a>
@@ -44,11 +56,13 @@ export default function Home() {
             </Card>
           );
         })}
-        <Card>
-          <h3>全真模考</h3>
-          <p>科目1 → 休息 → 科目3，各 90 分鐘。</p>
-          <div class="row"><a class="btn" href="/full/">進入全真模考</a></div>
-        </Card>
+        {electives.length ? (
+          <Card>
+            <h3>全真模考</h3>
+            <p>{subjectShort(first)} → 休息 → {electives.map(subjectShort).join(' 或 ')}，各 {SUBJECT_INFO[first].minutes} 分鐘。</p>
+            <div class="row"><a class="btn" href={`/full/?level=${level}`}>進入全真模考</a></div>
+          </Card>
+        ) : null}
       </div>
 
       <h2>近期成績</h2>
@@ -59,9 +73,9 @@ export default function Home() {
           {recent.map((s) => (
             <li key={s.id}>
               <a href={`/result/?id=${s.id}`}>
-                <span>{MODE_LABEL[s.mode]} · 科目{s.subject}</span>
+                <span>{MODE_LABEL[s.mode]} · {subjectLabel(s.subject)}</span>
                 <span class="muted">{fmtDate(s.submittedAt)}</span>
-                <span class="score">{s.score} 分 <Badge passed={s.score >= 70} /></span>
+                <span class="score">{s.score} 分 <Badge passed={isPassed(s.score, s.subject)} /></span>
               </a>
             </li>
           ))}
