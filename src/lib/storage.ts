@@ -15,6 +15,7 @@ const isAnswer = (v: unknown) => v === null || (isInt(v) && (v as number) >= 0 &
 const isAnswers = (x: unknown): x is (number | null)[] => Array.isArray(x) && x.every(isAnswer);
 const SUBJECTS = [1, 2, 3];
 const MODES = ['practice', 'exam', 'full', 'redo'];
+const SOURCES = ['all', 'official', 'original'];
 
 /** Returns why a session record is invalid, or null. Shared by load (drop bad records) and import (reject all). */
 export function sessionError(x: unknown): string | null {
@@ -50,7 +51,8 @@ const isActive = (x: unknown): x is ActiveSession =>
 
 const isFull = (x: unknown): x is FullExam =>
   isObj(x) && typeof x.id === 'string' && (x.elective === 2 || x.elective === 3) &&
-  ['section1', 'break', 'section2', 'done'].includes(x.stage as string) && (x.breakDeadline === null || isNum(x.breakDeadline));
+  ['section1', 'break', 'section2', 'done'].includes(x.stage as string) && (x.breakDeadline === null || isNum(x.breakDeadline)) &&
+  (x.source === undefined || SOURCES.includes(x.source as string));
 
 export const emptyState = (): AppState => ({ schemaVersion: 1, sessions: [], questionStats: {}, active: null, fullExam: null });
 

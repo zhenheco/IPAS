@@ -1,5 +1,7 @@
 export type Subject = 1 | 2 | 3;
 export type Mode = 'practice' | 'exam' | 'full' | 'redo';
+/** 題目來源 filter choice in setup; 'all' = no filter. */
+export type SourceChoice = 'all' | 'official' | 'original';
 
 export interface Question {
   id: string;
@@ -61,6 +63,8 @@ export interface FullExam {
   elective: 2 | 3;
   stage: 'section1' | 'break' | 'section2' | 'done';
   breakDeadline: number | null;
+  /** 題目來源 chosen at the start, so section 2 draws from the same pool; absent = 全部 */
+  source?: SourceChoice;
 }
 
 export interface AppState {

@@ -46,6 +46,13 @@ describe('parseState', () => {
     expect(s.active).toBeNull();
     expect(s.fullExam).toBeNull();
   });
+  it('keeps a 全真模考 with a valid 題目來源, still accepts old ones without it, and drops an invalid one', () => {
+    const exam = { id: 'F', elective: 3, stage: 'section1', breakDeadline: null };
+    const load = (fullExam: unknown) => parseState(JSON.stringify({ ...emptyState(), fullExam })).fullExam;
+    expect(load({ ...exam, source: 'official' })).toMatchObject({ source: 'official' });
+    expect(load(exam)).toEqual(exam);
+    expect(load({ ...exam, source: 'bogus' })).toBeNull();
+  });
 });
 
 describe('loadState / saveState', () => {

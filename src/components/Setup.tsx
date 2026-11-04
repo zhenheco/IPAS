@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'preact/hooks';
-import { MODE_LABEL, QUESTIONS_PER_SESSION, SUBJECT_NAMES } from '../config';
+import { MODE_LABEL, QUESTIONS_PER_SESSION, SOURCE_LABEL, SUBJECT_NAMES } from '../config';
 import { examBlock } from '../lib/session';
+import { filterBySource, hasOfficial } from '../lib/source';
 import { filterPool, itemName, topicName, topicOf } from '../lib/syllabus';
-import type { Subject } from '../lib/types';
+import type { SourceChoice, Subject } from '../lib/types';
 import { Card, Loading, SaveWarning, query, useApp, useBank } from './app';
 import { beginSession } from './start';
 
@@ -13,6 +14,7 @@ export default function Setup({ mode }: { mode: 'practice' | 'exam' }) {
   const [subject, setSubject] = useState<Subject>(1);
   const [topic, setTopic] = useState('');
   const [item, setItem] = useState('');
+  const [source, setSource] = useState<SourceChoice>('all');
 
   useEffect(() => {
     const q = query();
@@ -27,10 +29,15 @@ export default function Setup({ mode }: { mode: 'practice' | 'exam' }) {
   const inSubject = filterPool(bank.questions, { subject });
   const topics = [...new Set(inSubject.map((q) => topicOf(q.item)))].sort();
   const items = [...new Set(inSubject.filter((q) => !topic || topicOf(q.item) === topic).map((q) => q.item))].sort();
-  const pool = filterPool(bank.questions, { subject, topic: mode === 'practice' ? topic : '', item: mode === 'practice' ? item : '' });
+  const showSource = hasOfficial(bank.questions);
+  const sourceChoice = showSource ? source : 'all';
+  const pool = filterBySource(
+    filterPool(bank.questions, { subject, topic: mode === 'practice' ? topic : '', item: mode === 'practice' ? item : '' }),
+    sourceChoice,
+  );
   const n = Math.min(QUESTIONS_PER_SESSION, pool.length);
   const active = state.active;
-  const block = mode === 'exam' ? examBlock(subject, pool.length) : null;
+  const block = mode === 'exam' ? examBlock(subject, pool.length, sourceChoice === 'all' ? undefined : SOURCE_LABEL[sourceChoice]) : null;
 
   const start = () => {
     if (block) return;
@@ -62,6 +69,14 @@ export default function Setup({ mode }: { mode: 'practice' | 'exam' }) {
             {bank.subjects.map((s) => <option key={s} value={s}>科目{s} {SUBJECT_NAMES[s]}（{bank.count(s)} 題）</option>)}
           </select>
         </label>
+
+        {showSource ? (
+          <label class="field">題目來源
+            <select value={source} onChange={(e) => setSource(e.currentTarget.value as SourceChoice)}>
+              {(['all', 'official', 'original'] as const).map((c) => <option key={c} value={c}>{SOURCE_LABEL[c]}</option>)}
+            </select>
+          </label>
+        ) : null}
 
         {mode === 'practice' ? (
           <>

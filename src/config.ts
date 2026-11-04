@@ -1,4 +1,4 @@
-import type { Mode, Subject } from './lib/types';
+import type { Mode, SourceChoice, Subject } from './lib/types';
 
 /** 梯次 the owner is preparing for; change here for the next 梯次. */
 export const EXAM_DATE = '2026-11-14';
@@ -17,4 +17,10 @@ export const MODE_LABEL: Record<Mode, string> = {
   exam: '單科模考',
   full: '全真模考',
   redo: '錯題重做',
+};
+
+export const SOURCE_LABEL: Record<SourceChoice, string> = {
+  all: '全部',
+  official: '官方歷屆試題',
+  original: '原創模擬題',
 };

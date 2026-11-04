@@ -7,7 +7,7 @@ const LETTERS = ['A', 'B', 'C', 'D'];
 export function Review({ q, picked, index }: { q: Question; picked: number | null; index?: number }) {
   return (
     <div class="review">
-      <div class="qhead">{index !== undefined ? <b>第 {index + 1} 題</b> : null} <span class="muted">{q.item}</span></div>
+      <div class="qhead">{index !== undefined ? <b>第 {index + 1} 題</b> : null} <span class="muted">{q.item}</span> <span class={`badge src ${q.source}`}>{q.source === 'official' ? '官方' : '原創'}</span></div>
       <Rich text={q.stem} />
       <ul class="options">
         {q.options.map((o, i) => {
