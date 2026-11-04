@@ -67,7 +67,7 @@ ADR 0003 目前是 `proposed`，請確認後改成 `accepted`：
 2. [x] **初級梯次**：`migrations/0003_sitting_2026_11_beginner.sql` 已新增初級 2026-11-07（與中級 2026-11-14）；套用 migrations 後才會生效。之後的梯次照 `docs/payments.md`「新增梯次」。
 3. [ ] **秘密**：`BETTER_AUTH_SECRET`（`openssl rand -base64 32`）。清單見 `.dev.vars.example`，用 `npx wrangler secret put <NAME> -c wrangler.app.jsonc` 設定。
 4. [ ] **Google OAuth**：重新導向 URI `https://ipas.zhenhe-co.com/api/auth/callback/google`，並發布 OAuth 同意畫面。
-5. [ ] **Email**：Resend 驗證 `zhenhe-co.com` 寄件網域，設定 `RESEND_API_KEY`。
+5. [ ] **Email**：改走 zhenheco 中央 cf-email（`wrangler.app.jsonc` 已有 `CF_EMAIL` service binding，寄件網域 `zhenhe-co.com` 已驗證）。用 cf-mail repo 的 create-api-key script 建 key，存 1Password `op://Dev/CF_EMAIL_API_KEY_IPAS/credential`，再 `printf "%s" "$KEY" | npx wrangler secret put CF_EMAIL_API_KEY -c wrangler.app.jsonc`。部署後寄一封 magic link，從 `npx wrangler tail -c wrangler.app.jsonc` 取得 `[email:cf-email] id=<id> status=<status>` 的 id，再呼叫 cf-email 的 `GET /status/:id` 確認投遞；這需要另一把 scope 為 `status:read` 的 cf-email key（不是寄信用的 `CF_EMAIL_API_KEY`）。
 6. [ ] **PAYUNi sandbox**：取得測試商店 MerID／HashKey／HashIV，實際走一次 購買 → 付款成功 → `/account/` 顯示付費會員；也測付款失敗與重複通知。
 7. [ ] **核對 PAYUNi**：官方文件已於 2026-11-04 核對（`docs/research/payuni-upp-verification.md`），Version 已改 2.0、付款結果判斷已修正、已送 `TradeInvoice=1`。只剩一項需確認：**Notify 要回什麼字串、失敗如何重送**（目前回 `SUCCESS`；官方文件沒寫，需 sandbox 實測或來信 service@payuni.com.tw）。同時在 sandbox 確認 Version 2.0 與 `TradeInvoice=1` 實際可用。
 8. [ ] **統一發票**：PAYUNi 後台啟用自動開立（振禾有限公司，統編 83446730）。

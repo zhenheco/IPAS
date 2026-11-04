@@ -15,6 +15,7 @@ PAYUNI_MER_ID=
 PAYUNI_HASH_KEY=
 PAYUNI_HASH_IV=
 
-# Resend（EMAIL_PROVIDER=resend 時需要；本機可設 EMAIL_PROVIDER=console 改印在終端機）
-RESEND_API_KEY=
+# cf-email 中繼的 API key（EMAIL_PROVIDER=cf-email 時需要；來源見 docs/payments.md「Email」）。
+# 本機開發可不填，設 EMAIL_PROVIDER=console 改印在終端機。
+CF_EMAIL_API_KEY=
 EMAIL_PROVIDER=console

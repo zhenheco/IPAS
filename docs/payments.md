@@ -29,7 +29,7 @@
 | `worker/orders.ts` | 建立訂單、入帳（冪等）、`/api/me`、退款申請、標記退款、付費功能使用紀錄 |
 | `worker/payuni.ts` | PAYUNi UPP 表單、AES-256-GCM 加解密、HashInfo、回傳驗證 |
 | `worker/sync.ts` | 帳號同步的合併規則與讀寫 |
-| `worker/auth.ts`、`worker/email.ts` | Better Auth 設定；寄信介面（Resend 或 console） |
+| `worker/auth.ts`、`worker/email.ts` | Better Auth 設定；寄信介面（cf-email 中繼或 console） |
 | `worker/db/` | Kysely 型別與 `Store`（`atomic()` = D1 batch） |
 | `migrations/*.sql` | D1 migrations（可移植 SQL） |
 
@@ -66,7 +66,7 @@ D1 不支援互動式交易，需要「全部成功或全部失敗」的寫入�
 
 1. `/login/`：Google（`POST /api/auth/sign-in/social`，回傳 Google 授權網址）或 Email magic link（`POST /api/auth/sign-in/magic-link`，連結 5 分鐘有效）。
 2. 回呼後 Better Auth 設定 session cookie：host-only（`ipas.zhenhe-co.com`）、HTTPS 下為 `__Secure-` 前綴 + Secure、HttpOnly、SameSite=Lax。
-3. 寄信：`EMAIL_PROVIDER=resend` 用 Resend API；`console` 只印在 Worker log（開發用）。未設定時有 `RESEND_API_KEY` 就用 Resend。
+3. 寄信：`EMAIL_PROVIDER=cf-email` 經 service binding `CF_EMAIL`（zhenheco 中央 cf-email Worker，`POST /send`，同帳號不可直接 fetch 公開網址）寄出；`console` 只印在 Worker log（開發用）。未設定時，有 `CF_EMAIL` 綁定與 `CF_EMAIL_API_KEY` 就用 cf-email。`Idempotency-Key` 由信件內容雜湊產生，同一封重送不會重寄。
 4. 同一 email 用 Google 與 magic link 登入會連結為同一帳號（`accountLinking`，Google 為信任來源）。
 
 ### 購買 → 入帳 → 通行證
@@ -115,7 +115,7 @@ D1 不支援互動式交易，需要「全部成功或全部失敗」的寫入�
 
 `vars`（`wrangler.app.jsonc`）：`BETTER_AUTH_URL`（網站網址）、`PAYUNI_ENV`（sandbox/production）、`EMAIL_PROVIDER`、`EMAIL_FROM`、`ADMIN_EMAILS`。
 
-秘密（`npx wrangler secret put <NAME> -c wrangler.app.jsonc`，本機放 `.dev.vars`，範本 `.dev.vars.example`）：`BETTER_AUTH_SECRET`、`GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`、`PAYUNI_MER_ID`、`PAYUNI_HASH_KEY`、`PAYUNI_HASH_IV`、`RESEND_API_KEY`。
+秘密（`npx wrangler secret put <NAME> -c wrangler.app.jsonc`，本機放 `.dev.vars`，範本 `.dev.vars.example`）：`BETTER_AUTH_SECRET`、`GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`、`PAYUNI_MER_ID`、`PAYUNI_HASH_KEY`、`PAYUNI_HASH_IV`、`CF_EMAIL_API_KEY`。
 
 前端建置時變數（Astro `PUBLIC_*`）：`PUBLIC_PAYWALL_ENABLED=1` 啟用付費機制；`PUBLIC_ADSENSE_CLIENT=ca-pub-…` 啟用廣告。
 
@@ -151,7 +151,7 @@ VALUES ('intermediate-2027-05-22', 'intermediate', '2027-05-22', '2027 年 5 月
 1. **D1**：`npx wrangler d1 create ipas`，把 `database_id` 填入 `wrangler.app.jsonc`；`npx wrangler d1 migrations apply ipas --remote -c wrangler.app.jsonc`。確認 `exam_sittings` 有要販售的梯次。
 2. **Better Auth**：`openssl rand -base64 32` 產生 `BETTER_AUTH_SECRET` 並設定。
 3. **Google OAuth**：Google Cloud Console 建立 OAuth 用戶端（網頁應用程式），授權的重新導向 URI：`https://ipas.zhenhe-co.com/api/auth/callback/google`，JavaScript 來源：`https://ipas.zhenhe-co.com`；設定 `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`。OAuth 同意畫面需發布（否則只有測試使用者能登入）。
-4. **Email**：Resend 驗證寄件網域（`zhenhe-co.com` 的 DNS 紀錄），設定 `RESEND_API_KEY`、`EMAIL_FROM`。
+4. **Email**：走 cf-email 中繼，`zhenhe-co.com` 已是中繼的已驗證寄件網域，`EMAIL_FROM` 用純位址 `no-reply@zhenhe-co.com`。用 cf-mail repo 的 create-api-key script 建立 key，存進 1Password `op://Dev/CF_EMAIL_API_KEY_IPAS/credential`，再設定秘密：`op read op://Dev/CF_EMAIL_API_KEY_IPAS/credential | tr -d '\n' | npx wrangler secret put CF_EMAIL_API_KEY -c wrangler.app.jsonc`（等同 `printf "%s" "$KEY" | wrangler secret put ...`）。`wrangler.app.jsonc` 已含 `services` 綁定 `CF_EMAIL` → `cf-email`。部署後用 magic link 寄一封，再查投遞：每次寄出 Worker 會印一行 `[email:cf-email] id=<id> status=<status>`（`npx wrangler tail -c wrangler.app.jsonc` 查看）；用該 id 呼叫 cf-email 的 `GET /status/:id`。`/status` 需要另一把 scope 為 `status:read` 的 cf-email key（不是寄信用的 `CF_EMAIL_API_KEY`），不要把它設進這個 Worker。
 5. **PAYUNi sandbox**：
    - 取得測試商店的 MerID／HashKey／HashIV，`PAYUNI_ENV=sandbox`。
    - 商店後台設定 NotifyURL／ReturnURL 允許的網址（若後台有此設定）：`https://ipas.zhenhe-co.com/api/payuni/notify`、`/api/payuni/return`。

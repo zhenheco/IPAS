@@ -14,10 +14,14 @@ export interface Env {
   PAYUNI_MER_ID?: string;
   PAYUNI_HASH_KEY?: string;
   PAYUNI_HASH_IV?: string;
-  /** resend | console（預設：有 RESEND_API_KEY 用 resend，否則 console） */
+  /** cf-email | console（預設：有 CF_EMAIL 綁定與 CF_EMAIL_API_KEY 用 cf-email，否則 console） */
   EMAIL_PROVIDER?: string;
+  /** 純 email 位址（中繼會移除顯示名稱），須為已驗證的寄件網域 */
   EMAIL_FROM?: string;
-  RESEND_API_KEY?: string;
+  /** cf-email Worker 的 service binding（同帳號不可直接 fetch 公開網址） */
+  CF_EMAIL?: Fetcher;
+  /** cf-email 的 X-API-Key 秘密（wrangler secret put CF_EMAIL_API_KEY） */
+  CF_EMAIL_API_KEY?: string;
   /** 逗號分隔；可呼叫 /api/admin/* 的管理者 email */
   ADMIN_EMAILS?: string;
 }
