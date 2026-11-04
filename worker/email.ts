@@ -6,9 +6,10 @@ export interface EmailSender { send(m: EmailMessage): Promise<void> }
 
 export class ConsoleEmailSender implements EmailSender {
   readonly sent: EmailMessage[] = [];
+  constructor(private log = true) {}
   async send(m: EmailMessage) {
     this.sent.push(m);
-    console.log(`[email:console] to=${m.to} subject=${m.subject}\n${m.text}`);
+    if (this.log) console.log(`[email:console] to=${m.to} subject=${m.subject}\n${m.text}`);
   }
 }
 

@@ -9,7 +9,7 @@ export const PAYUNI = { PAYUNI_MER_ID: 'S01234567', PAYUNI_HASH_KEY: '1234567890
 
 export function harness(opts: { now?: Date; env?: Partial<Env> } = {}) {
   const db = migratedD1();
-  const mailer = new ConsoleEmailSender();
+  const mailer = new ConsoleEmailSender(false);
   const clock = { now: opts.now ?? new Date('2026-09-01T04:00:00.000Z') };
   const env = {
     DB: db.d1, ASSETS: { fetch: async () => new Response('static asset') },

@@ -6,3 +6,4 @@ data/questions/.generate.lock
 dist
 .astro
 .wrangler
+.dev.vars

@@ -7,7 +7,6 @@
  */
 import { Hono, type Context } from 'hono';
 import { z } from 'zod';
-import { isPassLevel, PASS_LEVELS } from '../src/lib/pricing';
 import { createAuth, type Auth } from './auth';
 import { d1Store, type Store } from './db';
 import { emailSenderFromEnv, type EmailSender } from './email';
@@ -37,7 +36,7 @@ export function payuniConfig(env: Env): PayuniConfig | null {
 
 const checkoutSchema = z.object({ sittingId: z.string().min(1).max(100), consent: z.literal(true) });
 const refundSchema = z.object({ orderId: z.string().min(1).max(100), reason: z.string().max(500).optional() });
-const usageSchema = z.object({ level: z.enum(PASS_LEVELS as [string, ...string[]]).refine(isPassLevel), feature: z.enum(PAID_USE_FEATURES) });
+const usageSchema = z.object({ level: z.enum(['beginner', 'intermediate']), feature: z.enum(PAID_USE_FEATURES) });
 
 const truthy = (v: unknown) => v === true || v === 'on' || v === 'true' || v === '1';
 
@@ -148,7 +147,7 @@ export function createApp(deps: AppDeps = {}) {
     if (!u) return c.json({ error: 'unauthenticated' }, 401);
     const p = usageSchema.safeParse(await c.req.json().catch(() => null));
     if (!p.success) return c.json({ error: 'bad_request' }, 400);
-    const r = await recordPaidFeatureUse(c.var.ctx.store, { userId: u.id, level: p.data.level as 'beginner' | 'intermediate', feature: p.data.feature, now: now() });
+    const r = await recordPaidFeatureUse(c.var.ctx.store, { userId: u.id, level: p.data.level, feature: p.data.feature, now: now() });
     return c.json(r);
   });
 
