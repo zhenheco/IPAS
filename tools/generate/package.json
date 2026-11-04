@@ -1,0 +1,20 @@
+{
+  "name": "ipas-question-generator",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "tsx src/cli.ts",
+    "check": "tsx src/check.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}
