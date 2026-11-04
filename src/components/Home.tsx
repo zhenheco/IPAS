@@ -29,6 +29,7 @@ export default function Home() {
         <Card class="countdown">
           <div class="muted">{info.name}考試倒數 · {examDate.replaceAll('-', '/')} 梯次</div>
           <div class="big">{days > 0 ? <>還有 <b>{days}</b> 天</> : days === 0 ? <b>今天考試，加油！</b> : <b>本梯次已結束</b>}</div>
+          {days > 0 ? <div class="row"><a class="btn small" href={`/plan/?level=${level}`}>今日讀書計畫</a></div> : null}
         </Card>
       ) : null}
 

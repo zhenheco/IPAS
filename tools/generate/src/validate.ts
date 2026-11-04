@@ -12,7 +12,7 @@ export class QuestionValidator {
   private ids = new Set<string>();
   private stems = new Set<string>();
 
-  constructor(private syllabus: Syllabus, existing: Question[] = []) {
+  constructor(private syllabus: Syllabus, existing: Question[] = [], private source: Question["source"] = "original") {
     for (const q of existing) this.add(q);
   }
 
@@ -45,7 +45,7 @@ export class QuestionValidator {
     else if (new Set(o.map((x) => x.trim())).size !== 4) bad.push("options not distinct");
 
     if (!Number.isInteger(r.answer) || (r.answer as number) < 0 || (r.answer as number) > 3) bad.push("answer must be 0..3");
-    if (r.source !== "original") bad.push('source must be "original"');
+    if (r.source !== this.source) bad.push(`source must be "${this.source}"`);
 
     if (nonEmpty(r.stem) && this.stems.has(normalizeStem(r.stem))) bad.push("duplicate stem");
     return bad;

@@ -10,10 +10,11 @@ import { go, isUnsaved, newId } from './app';
 /** Draw questions, store the new in-progress session (replacing any unfinished one) and open it. */
 export async function beginSession(
   update: (fn: (s: AppState) => AppState) => Promise<AppState>,
-  o: { mode: Mode; subject: Subject; pool: Question[]; fullId?: string; fullExam?: FullExam; now?: number; go?: boolean; paperId?: string; keepOrder?: boolean },
+  o: { mode: Mode; subject: Subject; pool: Question[]; fullId?: string; fullExam?: FullExam; now?: number; go?: boolean; count?: number; paperId?: string; keepOrder?: boolean },
 ) {
+  if (!o.pool.length) return null; // nothing to draw: never replace an unfinished session with an empty one
   const active = createSession({
-    id: newId(), mode: o.mode, subject: o.subject, questions: o.keepOrder ? o.pool : drawQuestions(o.pool, QUESTIONS_PER_SESSION),
+    id: newId(), mode: o.mode, subject: o.subject, questions: o.keepOrder ? o.pool : drawQuestions(o.pool, o.count ?? QUESTIONS_PER_SESSION),
     now: o.now ?? Date.now(), fullId: o.fullId, paperId: o.paperId,
   });
   if (o.mode !== 'practice') void reportPaidFeatureUse(levelOf(o.subject), MODE_FEATURE[o.mode]); // ends refund eligibility; no-op while the paywall is off

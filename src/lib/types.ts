@@ -1,6 +1,8 @@
 /** 中級 1-3 (L21-L23), 初級 11-12 (L11-L12); see levels.ts */
 export type Subject = 1 | 2 | 3 | 11 | 12;
 export type Mode = 'practice' | 'exam' | 'full' | 'redo';
+/** 題目來源 filter choice in setup; 'all' = no filter. */
+export type SourceChoice = 'all' | 'official' | 'original';
 
 export interface Question {
   id: string;
@@ -66,6 +68,8 @@ export interface FullExam {
   elective: Subject;
   stage: 'section1' | 'break' | 'section2' | 'done';
   breakDeadline: number | null;
+  /** 題目來源 chosen at the start, so section 2 draws from the same pool; absent = 全部 */
+  source?: SourceChoice;
 }
 
 export interface AppState {

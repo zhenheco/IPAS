@@ -33,4 +33,15 @@ describe("formatSummary", () => {
 describe("parseArgs 初級", () => {
   it.each([11, 12])("accepts 初級 subject %i", (n) => expect(parseArgs(["--subject", String(n), "--total", "10"]).subject).toBe(n));
   it.each([4, 10, 13])("rejects subject %i", (n) => expect(() => parseArgs(["--subject", String(n), "--total", "10"])).toThrow());
+  it("--variants is 中級 only", () => expect(() => parseArgs(["--subject", "11", "--variants", "2"])).toThrow(/中級/));
+});
+
+describe("parseArgs --variants", () => {
+  it("is an alternative to --total", () =>
+    expect(parseArgs(["--subject", "3", "--variants", "2"])).toMatchObject({ subject: 3, variants: 2, concurrency: 4 }));
+  it("cannot be combined with --total, and one of the two is required", () => {
+    expect(() => parseArgs(["--subject", "3", "--variants", "2", "--total", "10"])).toThrow(/either/);
+    expect(() => parseArgs(["--subject", "3"])).toThrow(/--total or --variants/);
+  });
+  it("must be a positive integer", () => expect(() => parseArgs(["--subject", "3", "--variants", "0"])).toThrow());
 });

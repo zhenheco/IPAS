@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'preact/hooks';
-import { MODE_LABEL, QUESTIONS_PER_SESSION } from '../config';
+import { MODE_LABEL, QUESTIONS_PER_SESSION, SOURCE_LABEL } from '../config';
 import { LEVELS, SUBJECT_INFO, isSubject, levelOf, subjectShort } from '../lib/levels';
 import { examBlock } from '../lib/session';
+import { filterBySource, hasOfficial } from '../lib/source';
 import { filterPool, itemName, topicName, topicOf } from '../lib/syllabus';
-import type { Subject } from '../lib/types';
+import type { SourceChoice, Subject } from '../lib/types';
 import { Card, LevelTabs, Loading, SaveWarning, query, useApp, useBank, useLevel } from './app';
 import Paywall from './Paywall';
 import { beginSession } from './start';
@@ -17,6 +18,7 @@ export default function Setup({ mode }: { mode: 'practice' | 'exam' }) {
   const [topic, setTopic] = useState('');
   const [item, setItem] = useState('');
   const [paper, setPaper] = useState('');
+  const [source, setSource] = useState<SourceChoice>('all');
 
   useEffect(() => {
     const q = query();
@@ -38,10 +40,15 @@ export default function Setup({ mode }: { mode: 'practice' | 'exam' }) {
   const inSubject = filterPool(bank.questions, { subject });
   const topics = [...new Set(inSubject.map((q) => topicOf(q.item)))].sort();
   const items = [...new Set(inSubject.filter((q) => !topic || topicOf(q.item) === topic).map((q) => q.item))].sort();
-  const pool = filterPool(bank.questions, { subject, topic: mode === 'practice' ? topic : '', item: mode === 'practice' ? item : '' });
+  const showSource = hasOfficial(bank.questions);
+  const sourceChoice = showSource ? source : 'all';
+  const pool = filterBySource(
+    filterPool(bank.questions, { subject, topic: mode === 'practice' ? topic : '', item: mode === 'practice' ? item : '' }),
+    sourceChoice,
+  );
   const n = Math.min(QUESTIONS_PER_SESSION, pool.length);
   const active = state.active;
-  const block = mode === 'exam' && !chosenPaper ? examBlock(subject, pool.length) : null;
+  const block = mode === 'exam' && !chosenPaper ? examBlock(subject, pool.length, sourceChoice === 'all' ? undefined : SOURCE_LABEL[sourceChoice]) : null;
 
   const start = () => {
     if (block) return;
@@ -82,6 +89,14 @@ export default function Setup({ mode }: { mode: 'practice' | 'exam' }) {
             <select value={chosenPaper?.id ?? ''} onChange={(e) => setPaper(e.currentTarget.value)}>
               <option value="">隨機抽題（依知識點比例）</option>
               {papers.map((p) => <option key={p.id} value={p.id}>模擬試卷 第 {p.no} 回{state.sessions.some((x) => x.paperId === p.id) ? '（已作答）' : ''}</option>)}
+            </select>
+          </label>
+        ) : null}
+
+        {showSource && !chosenPaper ? (
+          <label class="field">題目來源
+            <select value={source} onChange={(e) => setSource(e.currentTarget.value as SourceChoice)}>
+              {(['all', 'official', 'original'] as const).map((c) => <option key={c} value={c}>{SOURCE_LABEL[c]}</option>)}
             </select>
           </label>
         ) : null}

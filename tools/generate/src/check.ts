@@ -23,9 +23,13 @@ export function positionStats(qs: Question[]): Record<number, PositionStat> {
 
 export interface CheckResult { files: { file: string; count: number }[]; errors: string[]; stats: Record<number, PositionStat> }
 
-export async function checkFiles(dir: string, syllabus: Syllabus): Promise<CheckResult> {
-  const names = (await fs.readdir(dir)).filter((f) => f.endsWith(".json")).sort();
-  const validator = new QuestionValidator(syllabus);
+/**
+ * `source` "original" checks data/questions (one shared duplicate baseline); "official" checks data/official, where
+ * each <exam>-s<N>.json stands alone (the same question may legitimately recur across exams) and must hold 50 questions.
+ */
+export async function checkFiles(dir: string, syllabus: Syllabus, source: Question["source"] = "original"): Promise<CheckResult> {
+  const names = (await fs.readdir(dir)).filter((f) => f.endsWith(".json") && !f.startsWith(".")).sort(); // dot-files are bookkeeping
+  let validator = new QuestionValidator(syllabus, [], source);
   const errors: string[] = [];
   const good: Question[] = [];
   const files: CheckResult["files"] = [];
@@ -39,7 +43,11 @@ export async function checkFiles(dir: string, syllabus: Syllabus): Promise<Check
     }
     if (!Array.isArray(data)) { errors.push(`${file}: not a JSON array`); continue; }
     files.push({ file, count: data.length });
-    const forced = /^subject-(\d+)\.json$/.exec(file)?.[1];
+    if (source === "official") {
+      validator = new QuestionValidator(syllabus, [], source);
+      if (data.length !== 50) errors.push(`${file}: ${data.length} questions, expected 50`);
+    }
+    const forced = /(?:^subject-|-s)(\d+)\.json$/.exec(file)?.[1];
     data.forEach((q, i) => {
       const bad = validator.check(q, forced ? Number(forced) : undefined);
       if (bad.length) errors.push(`${file}[${i}] ${(q as any)?.id ?? "?"}: ${bad.join("; ")}`);
@@ -57,9 +65,13 @@ async function main() {
     const pct = s.counts.map((c, k) => `${"ABCD"[k]} ${c} (${((c / s.total) * 100).toFixed(0)}%)`).join("  ");
     console.log(`subject ${subject} answer positions (n=${s.total}): ${pct}${s.flagged ? "  WARN: a position exceeds 40%" : ""}`);
   }
-  for (const e of r.errors) console.error(`ERROR ${e}`);
-  console.log(r.errors.length ? `FAILED: ${r.errors.length} problem(s)` : "OK");
-  process.exitCode = r.errors.length ? 1 : 0;
+  const officialDir = path.join(root, "official");
+  const off = await fs.stat(officialDir).then(() => checkFiles(officialDir, loadSyllabus(path.join(root, "syllabus.json")), "official"), () => undefined);
+  for (const f of off?.files ?? []) console.log(`official/${f.file}: ${f.count} questions`);
+  const errors = [...r.errors, ...(off?.errors ?? []).map((e) => `official/${e}`)];
+  for (const e of errors) console.error(`ERROR ${e}`);
+  console.log(errors.length ? `FAILED: ${errors.length} problem(s)` : "OK");
+  process.exitCode = errors.length ? 1 : 0;
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) await main();

@@ -107,3 +107,12 @@ td:first-child { white-space: normal; }
 .meter { height: 8px; width: 110px; background: var(--code-bg); border-radius: 4px; overflow: hidden; }
 .meter i { display: block; height: 100%; background: var(--accent); }
 .scorecard .big b { font-size: 2.4rem; }
+
+.badge.src { background: var(--surface); color: var(--muted); border: 1px solid var(--line); font-weight: 500; }
+.badge.src.official { color: var(--accent); border-color: var(--accent); }
+
+.tasks li { align-items: center; }
+.tasks li.done > span { color: var(--muted); }
+.plandays { padding-left: 1.2em; }
+.plandays > li { margin: 8px 0; }
+.plandays ul { margin: 2px 0 0; padding-left: 1.2em; color: var(--muted); }

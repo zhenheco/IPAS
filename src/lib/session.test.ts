@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EXAM_MIN_QUESTIONS, advanceToSection2, applyEdit, applySubmit, createSession, editActive, examBlock, submitSession } from './session';
+import { EXAM_MIN_QUESTIONS, advanceToSection2, applyEdit, applySubmit, createSession, editActive, examBlock, section2Action, section2Pool, submitSession } from './session';
 import { afterSectionSubmit, startFull } from './fullexam';
 import { emptyState } from './storage';
 import { BREAK_CAP_MS } from './timer';
@@ -114,6 +114,11 @@ describe('examBlock (單科模考 / 全真模考 need a full pool)', () => {
     expect(msg).toContain('50');
     expect(msg).toContain('科目3');
   });
+  it('names the 題目來源 when the pool was narrowed to one', () => {
+    expect(examBlock(3, 12, '官方歷屆試題')).toContain('官方歷屆試題');
+    expect(examBlock(3, 12, '官方歷屆試題')).toContain('12');
+    expect(examBlock(3, 12)).not.toContain('官方');
+  });
 });
 
 describe('state-level actions carry the session id they belong to', () => {
@@ -184,5 +189,44 @@ describe('advanceToSection2 (idempotent break -> section 2)', () => {
     const s1 = { ...emptyState(), fullExam: startFull('F', 3) };
     expect(advanceToSection2(s1, 'F', NOW, make(calls))).toBe(s1);
     expect(calls).toEqual([]);
+  });
+});
+
+describe('section2Pool (rechecked when resuming into section 2)', () => {
+  const many = (n: number, source: Question['source']): Question[] =>
+    Array.from({ length: n }, (_, i) => ({ ...qs[0], id: `${source}${i}`, source }));
+  const exam = (source?: 'official' | 'original') => ({ id: 'F', elective: 3 as const, stage: 'break' as const, breakDeadline: 1, ...(source ? { source } : {}) });
+
+  it('is fine when the filtered pool still has 50 題', () => {
+    const r = section2Pool([...many(50, 'official'), ...many(5, 'original')], exam('official'));
+    expect(r.block).toBeNull();
+    expect(r.pool).toHaveLength(50);
+  });
+  it('blocks with a clear message when the chosen 題目來源 no longer has enough 題', () => {
+    const r = section2Pool(many(80, 'original'), exam('official'));
+    expect(r.pool).toHaveLength(0);
+    expect(r.block).toContain('官方歷屆試題');
+    expect(r.block).toContain('0');
+  });
+  it('without a 題目來源 it uses the whole 科目', () => {
+    expect(section2Pool(many(60, 'original'), exam()).block).toBeNull();
+    expect(section2Pool(many(10, 'original'), exam()).block).toContain('10');
+  });
+});
+
+describe('section2Action (auto-start at the end of the break)', () => {
+  const many = (n: number): Question[] => Array.from({ length: n }, (_, i) => ({ ...qs[0], id: `o${i}`, source: 'original' as const }));
+  const brk = { id: 'F', elective: 3 as const, stage: 'break' as const, breakDeadline: 1000 };
+
+  it('waits until the break deadline, then starts', () => {
+    expect(section2Action(many(60), brk, 999)).toBe('wait');
+    expect(section2Action(many(60), brk, 1000)).toBe('start');
+  });
+  it('stays blocked while the chosen 題目來源 is short, and starts once "全部" is chosen', () => {
+    expect(section2Action(many(60), { ...brk, source: 'official' }, 5000)).toBe('blocked');
+    expect(section2Action(many(60), brk, 5000)).toBe('start');
+  });
+  it('does nothing outside the break', () => {
+    expect(section2Action(many(60), { ...brk, stage: 'section1' }, 5000)).toBe('wait');
   });
 });

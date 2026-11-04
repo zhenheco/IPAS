@@ -1,5 +1,5 @@
-import type { Level } from './lib/levels';
-import type { Mode, Subject } from './lib/types';
+import { SUBJECT_INFO, type Level } from './lib/levels';
+import type { Mode, SourceChoice, Subject } from './lib/types';
 
 /**
  * 梯次 date per level that the countdown points at; change here for the next 梯次.
@@ -13,6 +13,8 @@ export const EXAM_DATES: Record<Level, string | null> = {
 export const EXAM_DATE = EXAM_DATES.intermediate!;
 export const QUESTIONS_PER_SESSION = 50;
 
+export const SUBJECT_NAMES: Record<Subject, string> = Object.fromEntries(Object.values(SUBJECT_INFO).map((i) => [i.subject, i.name])) as Record<Subject, string>;
+
 /** 科目 shown even before they have 題目 (科目2 / 初級 appear once they have 題目). */
 export const DEFAULT_SUBJECTS: Subject[] = [1, 3];
 /** Level shown first when the viewer has not picked one. */
@@ -23,4 +25,10 @@ export const MODE_LABEL: Record<Mode, string> = {
   exam: '單科模考',
   full: '全真模考',
   redo: '錯題重做',
+};
+
+export const SOURCE_LABEL: Record<SourceChoice, string> = {
+  all: '全部',
+  official: '官方歷屆試題',
+  original: '原創模擬題',
 };

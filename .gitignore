@@ -6,4 +6,4 @@ data/questions/.generate.lock
 dist
 .astro
 .wrangler
-.dev.vars
+data/questions/.variants-progress.json

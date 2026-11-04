@@ -5,6 +5,7 @@
   "scripts": {
     "generate": "tsx src/cli.ts",
     "check": "tsx src/check.ts",
+    "import-official": "tsx src/importCli.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

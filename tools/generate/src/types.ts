@@ -19,7 +19,7 @@ export interface Question {
   answer: 0 | 1 | 2 | 3;
   explanation: string;
   related: string;
-  source: "original";
+  source: "original" | "official";
 }
 
 /** What the model returns per question (no id/subject/item/source: we own those). */
