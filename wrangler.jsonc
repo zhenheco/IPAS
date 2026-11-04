@@ -5,5 +5,9 @@
     "directory": "./dist",
     "not_found_handling": "404-page"
   },
-  "routes": [{ "pattern": "ipas.zhenhe-co.com", "custom_domain": true }]
+  "routes": [
+    { "pattern": "ipas.zhenhe-co.com", "custom_domain": true },
+    // exact route needed: zone has *.zhenhe-co.com/* and */* routes to another Worker that otherwise win
+    { "pattern": "ipas.zhenhe-co.com/*", "zone_name": "zhenhe-co.com" }
+  ]
 }
