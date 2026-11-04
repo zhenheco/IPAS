@@ -1,14 +1,15 @@
 /**
  * PAYUNi（統一金流）UPP 整合支付頁串接。商店：振禾有限公司（統編 83446730）。
  *
- * 加解密依 PAYUNi 官方 PHP 範例的理解實作（撰寫時無法連線官方文件驗證）：
+ * 加解密依 PAYUNi 官方 PHP SDK（github.com/payuni/PHP_SDK）的 Encrypt／HashInfo 實作，並與官方 API 文件
+ * （docs.payuni.com.tw ShowDoc page 29、343、312）核對，2026-11-04 確認；範例如下：
  *   EncryptInfo = bin2hex( openssl_encrypt(http_build_query(params), 'aes-256-gcm', HashKey, 0, HashIV, $tag)
  *                          . ':::' . base64_encode($tag) )
  *   （openssl_encrypt 的 options=0 時輸出即為 base64 密文）
  *   HashInfo    = strtoupper( hash('sha256', HashKey . EncryptInfo . HashIV) )
  * 以 WebCrypto（crypto.subtle）實作，Workers 與 Node 皆可執行。
  *
- * 所有未經官方文件確認的假設都標註「待以 PAYUNi 官方文件確認」，並整理在 docs/payments.md。
+ * 逐項核對結果見 docs/research/payuni-upp-verification.md。仍未確認的項目標註「待確認」，並整理在 docs/payments.md。
  */
 
 export type PayuniEnv = 'sandbox' | 'production';
@@ -22,14 +23,14 @@ export interface PayuniConfig {
   env: PayuniEnv;
 }
 
-// 待以 PAYUNi 官方文件確認：UPP 端點網址
+// 已對照官方文件（API page 34）確認（2026-11-04）：UPP 端點網址
 export const UPP_ENDPOINT: Record<PayuniEnv, string> = {
   sandbox: 'https://sandbox-api.payuni.com.tw/api/upp',
   production: 'https://api.payuni.com.tw/api/upp',
 };
 
-// 待以 PAYUNi 官方文件確認：UPP 的 Version 參數值
-export const UPP_VERSION = '1.0';
+// 官方文件 page 34：Version 固定 2.0（page 25 更新紀錄：1.0 仍可用，但電子發票功能不支援舊版 1.0/1.1）。待 sandbox 實測。
+export const UPP_VERSION = '2.0';
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -59,7 +60,7 @@ const TAG_BYTES = 16;
 
 /** 官方範例對金鑰與 IV 先 trim() 再使用（HashInfo 則用未 trim 的原值） */
 function keyBytes(hashKey: string, hashIV: string) {
-  // 待以 PAYUNi 官方文件確認：HashKey 為 32 字元、HashIV 為 16 字元，直接以 UTF-8 位元組作為金鑰與 IV
+  // 官方 SDK 以 HashKey／HashIV 原字串作 AES-256-GCM 金鑰與 IV；32／16 字元僅見於官方範例（文件未明訂長度），以 sandbox 取得的實際值為準
   const key = enc.encode(hashKey.trim());
   const iv = enc.encode(hashIV.trim());
   if (key.length !== 32) throw new Error('PAYUNI_HASH_KEY 必須為 32 位元組');
@@ -135,7 +136,9 @@ export interface CheckoutForm {
 
 /** 產生送往 UPP 的表單欄位 */
 export async function buildCheckout(cfg: PayuniConfig, order: CheckoutOrder, urls: { returnUrl: string; notifyUrl: string; backUrl?: string }, now: Date): Promise<CheckoutForm> {
-  // 待以 PAYUNi 官方文件確認：UPP 加密參數名稱與必填項目（MerID、MerTradeNo、TradeAmt、Timestamp、ProdDesc、UsrMail、ReturnURL、NotifyURL、BackURL）
+  // 官方文件 page 34：必填 MerID、MerTradeNo、TradeAmt、Timestamp、ProdDesc；ReturnURL／NotifyURL／BackURL／UsrMail 為條件式；
+  // NotifyURL 僅支援 80／443 埠。未指定付款方式參數時，依商店後台預設顯示。
+  // TradeInvoice=1 啟用電子發票（實際開立仍依 PAYUNi 後台電子發票設定）；待 sandbox 實測。
   const params: Record<string, string | number> = {
     MerID: cfg.merId,
     MerTradeNo: order.merTradeNo,
@@ -145,6 +148,7 @@ export async function buildCheckout(cfg: PayuniConfig, order: CheckoutOrder, url
     UsrMail: order.email,
     ReturnURL: urls.returnUrl,
     NotifyURL: urls.notifyUrl,
+    TradeInvoice: 1,
   };
   if (urls.backUrl) params.BackURL = urls.backUrl;
   const EncryptInfo = await encryptInfo(params, cfg.hashKey, cfg.hashIV);
@@ -183,7 +187,7 @@ export type VerifyError = 'missing_fields' | 'bad_hash' | 'decrypt_failed' | 'me
  * 順序：欄位齊全 → HashInfo 相符 → 解密成功 → 內外層 MerID 皆等於本商店。
  */
 export async function verifyPayuniForm(cfg: PayuniConfig, form: Record<string, string>): Promise<{ ok: true; result: PayuniResult } | { ok: false; error: VerifyError }> {
-  // 待以 PAYUNi 官方文件確認：回傳表單欄位為 Status、MerID、Version、EncryptInfo、HashInfo
+  // 官方文件（page 80）：NotifyURL／ReturnURL 以 Form Post 回傳 Status、MerID、Version、EncryptInfo、HashInfo
   const { EncryptInfo, HashInfo } = form;
   if (!EncryptInfo || !HashInfo) return { ok: false, error: 'missing_fields' };
   const expected = await hashInfo(EncryptInfo, cfg.hashKey, cfg.hashIV);
@@ -191,7 +195,7 @@ export async function verifyPayuniForm(cfg: PayuniConfig, form: Record<string, s
   let data: Record<string, string>;
   try { data = await decryptInfo(EncryptInfo, cfg.hashKey, cfg.hashIV); } catch { return { ok: false, error: 'decrypt_failed' }; }
   if ((form.MerID && form.MerID !== cfg.merId) || data.MerID !== cfg.merId) return { ok: false, error: 'mer_id_mismatch' };
-  // 待以 PAYUNi 官方文件確認：解密後欄位名稱 MerTradeNo、TradeNo、TradeAmt、TradeStatus、Status
+  // 官方文件：解密後欄位 Status、MerID、MerTradeNo、TradeNo、TradeAmt、TradeStatus
   const tradeAmt = Number(data.TradeAmt);
   if (!data.MerTradeNo || !Number.isInteger(tradeAmt)) return { ok: false, error: 'bad_payload' };
   return {
@@ -212,19 +216,23 @@ export async function verifyPayuniForm(cfg: PayuniConfig, form: Record<string, s
 export type PaymentOutcome = 'paid' | 'failed' | 'pending';
 
 /**
- * 依回傳判斷付款結果。
- * 待以 PAYUNi 官方文件確認：Status=SUCCESS 且 TradeStatus=1 為已付款；TradeStatus 2/3 為失敗/取消；
- * 其餘（如 0 = ATM/超商已取號未付款）視為仍待付款。
+ * 依回傳判斷付款結果（官方文件 page 34）。TradeStatus：0 取號成功、1 已付款、2 付款失敗、3 付款取消、8 訂單待確認。
+ * - TradeStatus 2/3：失敗（不論外層 Status）。
+ * - 外層 Status 為 UNKNOWN（等待授權結果逾期／系統忙碌）或 UNAPPROVED（不分大小寫）：結果未定，維持待付款，絕不入帳。
+ * - Status=SUCCESS 且 TradeStatus=1：已付款；其餘 SUCCESS（0、8）：待付款。
+ * - 其他外層 Status（明確錯誤）：失敗。
  */
 export function paymentOutcome(r: Pick<PayuniResult, 'status' | 'tradeStatus'>): PaymentOutcome {
-  if (r.status === 'SUCCESS' && r.tradeStatus === '1') return 'paid';
-  if (r.status !== 'SUCCESS' || r.tradeStatus === '2' || r.tradeStatus === '3') return 'failed';
-  return 'pending';
+  if (r.tradeStatus === '2' || r.tradeStatus === '3') return 'failed';
+  const status = r.status.toUpperCase();
+  if (status === 'UNKNOWN' || status === 'UNAPPROVED') return 'pending';
+  if (status !== 'SUCCESS') return 'failed';
+  return r.tradeStatus === '1' ? 'paid' : 'pending';
 }
 
 /**
  * 商店訂單編號：IP + 台灣時間 yyMMddHHmmss + 6 碼隨機英數（共 20 字元）。
- * 待以 PAYUNi 官方文件確認：MerTradeNo 長度上限與允許字元（假設 ≤ 25 字元英數）。
+ * 官方文件：MerTradeNo 最長 25 字元、允許 [A-Za-z0-9_-]，10 分鐘內不可重複；本函式產生的 20 字元符合。
  */
 export function newMerTradeNo(now: Date, rand: () => string = () => crypto.randomUUID().replace(/-/g, '').slice(0, 6)): string {
   const t = new Date(now.getTime() + 8 * 3_600_000).toISOString();

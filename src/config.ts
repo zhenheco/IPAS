@@ -4,10 +4,11 @@ import type { Mode, SourceChoice, Subject } from './lib/types';
 /**
  * 梯次 date per level that the countdown points at; change here for the next 梯次.
  * null hides the countdown (初級 is held several times a year: fill in the 梯次 you are preparing for).
+ * 初級 115 年度 梯次 (簡章 0410): 3/21, 5/16, 8/15, 11/7; after 11/7 move this to the next 梯次 and add it to exam_sittings (docs/payments.md「新增梯次」).
  */
 export const EXAM_DATES: Record<Level, string | null> = {
   intermediate: '2026-11-14',
-  beginner: null,
+  beginner: '2026-11-07',
 };
 /** @deprecated use EXAM_DATES.intermediate */
 export const EXAM_DATE = EXAM_DATES.intermediate!;

@@ -1,6 +1,6 @@
 // 完整版（靜態資源 + /api/* Worker + D1）設定。目前正式部署仍用 wrangler.jsonc（純靜態）。
 // 切換步驟見 docs/payments.md「上線檢查清單」：
-//   npx wrangler d1 create ipas         → 把 database_id 填入下方
+//   D1 已建立（database_id 已填入下方）；如需重建：npx wrangler d1 create ipas
 //   npx wrangler d1 migrations apply ipas --remote -c wrangler.app.jsonc
 //   npx wrangler secret put <NAME> -c wrangler.app.jsonc（清單見 .dev.vars.example）
 //   npx astro build && npx wrangler deploy -c wrangler.app.jsonc
@@ -21,7 +21,7 @@
     {
       "binding": "DB",
       "database_name": "ipas",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "d88ccc7b-f2e4-4f14-83ea-eb90ed52704d",
       "migrations_dir": "migrations"
     }
   ],

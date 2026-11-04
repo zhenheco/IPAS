@@ -8,7 +8,7 @@ interface Offer {
 }
 
 const ERRORS: Record<string, string> = {
-  consent_required: '請先勾選同意數位內容立即提供、不適用 7 天鑑賞期。',
+  consent_required: '請先勾選同意服務條款與退款政策，並同意數位內容於付款後立即提供、不適用 7 天猶豫期。',
   already_owned: '你已持有此梯次的考期通行證。',
   not_purchasable: '此梯次已停止販售。',
   sitting_not_found: '找不到此梯次。',
@@ -38,8 +38,8 @@ function Rules() {
     <ul class="rules">
       <li>考期通行證：一次付款，涵蓋該級別所有科目、單一梯次，自購買起至考試日後 {PRICING.validDaysAfterExam} 天止。初級與中級分開購買。</li>
       <li>早鳥價：考試日前 {PRICING.earlyBirdDays} 天（含）以上購買。續購價：曾購買過考期通行證者。多項適用時取最低價。</li>
-      <li>付費功能：單科模考、全真模考、錯題本、錯題重做、弱點分析、讀書計畫，且不顯示廣告。練習與作答歷史永遠免費。</li>
-      <li>退款：購買後 {PRICING.refundWindowDays} 天內、且尚未使用任何付費功能，可全額退款。</li>
+      <li>付費功能：單科模考、全真模考、錯題本、錯題重做、弱點分析、讀書計畫，且在持有通行證的級別不顯示廣告（初級與中級分開計算）。練習與作答歷史永遠免費。</li>
+      <li>退款：購買後 {PRICING.refundWindowDays} 天內、且尚未使用任何付費功能，可全額退款。詳見<a href="/refund/">退款政策</a>與<a href="/terms/">服務條款</a>。</li>
       <li>收款與發票：振禾有限公司（統編 83446730）透過 PAYUNi 收款，自動開立電子發票。</li>
     </ul>
   );
@@ -86,7 +86,7 @@ export default function Pricing() {
                 <>
                   <label class="check">
                     <input type="checkbox" name="consent" value="on" required />
-                    <span>我同意本數位內容於付款後立即提供，因此不適用 7 天鑑賞期（解除權）；退款依本站退款規則辦理。</span>
+                    <span>我已閱讀並<b>同意服務條款與退款政策，並同意數位內容於付款後立即提供、不適用 7 天猶豫期</b>。（<a href="/terms/" target="_blank" rel="noopener">服務條款</a>、<a href="/refund/" target="_blank" rel="noopener">退款政策</a>）</span>
                   </label>
                   <button type="submit" class="btn" disabled={!o.purchasable}>前往付款</button>
                 </>

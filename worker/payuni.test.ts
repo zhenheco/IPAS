@@ -11,7 +11,7 @@ const cfg: PayuniConfig = { merId: 'S01234567', hashKey: KEY, hashIV: IV, env: '
 /**
  * 以 PHP 8.3 執行「官方 PHP 範例寫法」(openssl_encrypt aes-256-gcm + bin2hex(cipher:::base64(tag)) 與
  * strtoupper(hash('sha256', key.encrypt.iv))) 產生的測試向量。證明本實作與該 PHP 寫法位元組一致；
- * 該寫法本身是否等同 PAYUNi 現行規格仍「待以 PAYUNi 官方文件確認」。
+ * 該寫法已對照官方 PHP SDK 與 API 文件確認（docs/research/payuni-upp-verification.md）。
  */
 const PHP_PARAMS = {
   MerID: 'S01234567', MerTradeNo: 'IP261104120000ABC123', TradeAmt: 490, Timestamp: 1762228800,
@@ -77,7 +77,7 @@ describe('EncryptInfo / HashInfo', () => {
 
 async function notifyForm(data: Record<string, string | number>, status = 'SUCCESS') {
   const EncryptInfo = await encryptInfo(data, KEY, IV);
-  return { Status: status, MerID: String(data.MerID), Version: '1.0', EncryptInfo, HashInfo: await hashInfo(EncryptInfo, KEY, IV) };
+  return { Status: status, MerID: String(data.MerID), Version: '2.0', EncryptInfo, HashInfo: await hashInfo(EncryptInfo, KEY, IV) };
 }
 
 describe('verifyPayuniForm', () => {
@@ -111,6 +111,18 @@ describe('paymentOutcome', () => {
     expect(paymentOutcome({ status: 'SUCCESS', tradeStatus: '3' })).toBe('failed');
     expect(paymentOutcome({ status: 'ERROR', tradeStatus: '1' })).toBe('failed');
   });
+  it('TradeStatus 8 (訂單待確認) stays pending', () => {
+    expect(paymentOutcome({ status: 'SUCCESS', tradeStatus: '8' })).toBe('pending');
+  });
+  it('outer Status UNKNOWN (等待授權結果逾期/系統忙碌) and UNAPPROVED are pending, case-insensitively, and never paid', () => {
+    for (const status of ['UNKNOWN', 'unknown', 'UNAPPROVED', 'Unapproved']) {
+      for (const tradeStatus of ['', '0', '1', '8']) expect(paymentOutcome({ status, tradeStatus })).toBe('pending');
+    }
+  });
+  it('an explicit failure (TradeStatus 2/3) is failed whatever the outer Status', () => {
+    expect(paymentOutcome({ status: 'UNKNOWN', tradeStatus: '2' })).toBe('failed');
+    expect(paymentOutcome({ status: 'UNAPPROVED', tradeStatus: '3' })).toBe('failed');
+  });
 });
 
 describe('buildCheckout', () => {
@@ -120,10 +132,11 @@ describe('buildCheckout', () => {
       { returnUrl: 'https://x/r', notifyUrl: 'https://x/n' }, now);
     expect(f.action).toBe(UPP_ENDPOINT.sandbox);
     expect(f.fields.MerID).toBe('S01234567');
+    expect(f.fields.Version).toBe('2.0');
     expect(f.fields.HashInfo).toBe(await hashInfo(f.fields.EncryptInfo, KEY, IV));
     expect(await decryptInfo(f.fields.EncryptInfo, KEY, IV)).toEqual({
       MerID: 'S01234567', MerTradeNo: 'IP1', TradeAmt: '490', Timestamp: String(now.getTime() / 1000), ProdDesc: '考期通行證',
-      UsrMail: 'u@example.com', ReturnURL: 'https://x/r', NotifyURL: 'https://x/n',
+      UsrMail: 'u@example.com', ReturnURL: 'https://x/r', NotifyURL: 'https://x/n', TradeInvoice: '1',
     });
     const prod = await buildCheckout({ ...cfg, env: 'production' }, { merTradeNo: 'IP1', amount: 1, prodDesc: 'x', email: 'e' }, { returnUrl: 'r', notifyUrl: 'n' }, now);
     expect(prod.action).toBe('https://api.payuni.com.tw/api/upp');

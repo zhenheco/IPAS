@@ -25,7 +25,7 @@ export interface LevelInfo {
   fullElectives: Subject[];
 }
 
-// 初級 time limit and pass score follow the 115 年簡章 as known on 2026-11-04 (75 分鐘、每科 70 分); verify each 梯次.
+// 初級 time limit (75 分鐘) and pass score (每科 70 分) confirmed against the 115 年度簡章 (0410 version) on 2026-11-04; re-check each year's 簡章.
 export const SUBJECT_INFO: Record<Subject, SubjectInfo> = {
   1: { subject: 1, level: 'intermediate', code: 'L21', no: 1, name: '人工智慧技術應用與規劃', minutes: 90, passScore: 70 },
   2: { subject: 2, level: 'intermediate', code: 'L22', no: 2, name: '大數據處理分析與應用', minutes: 90, passScore: 70 },

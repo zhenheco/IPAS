@@ -1,6 +1,7 @@
 import type { ComponentChildren } from 'preact';
-import { isEntitled } from '../lib/account';
-import { FEATURE_NAME, PAYWALL_ENABLED, isPaidFeature, type Feature } from '../lib/entitlement';
+import { useEffect } from 'preact/hooks';
+import { isEntitled, reportPaidFeatureUseOnce } from '../lib/account';
+import { FEATURE_NAME, PAYWALL_ENABLED, countsAsPaidUse, isPaidFeature, type Feature } from '../lib/entitlement';
 import { PASS_LEVEL_NAME, type PassLevel } from '../lib/pricing';
 import { useAccount } from './useAccount';
 
@@ -10,6 +11,9 @@ import { useAccount } from './useAccount';
  */
 export default function Paywall({ feature, level, children }: { feature: Feature; level: PassLevel; children: ComponentChildren }) {
   const [account] = useAccount();
+  const shown = PAYWALL_ENABLED && countsAsPaidUse(feature) && isEntitled(account, level);
+  // content is displayed to a paying member = paid feature used: ends 退款資格 (no-op unless signed in with a pass for this level)
+  useEffect(() => { if (shown) void reportPaidFeatureUseOnce(level, feature); }, [shown, level, feature]);
   if (!PAYWALL_ENABLED || !isPaidFeature(feature)) return <>{children}</>;
   if (!account) return <p class="muted">載入中…</p>;
   if (isEntitled(account, level)) return <>{children}</>;
@@ -17,6 +21,7 @@ export default function Paywall({ feature, level, children }: { feature: Feature
     <div class="card" role="region" aria-label="付費功能">
       <h2 style="margin-top:0">🔒 {FEATURE_NAME[feature]}需要{PASS_LEVEL_NAME[level]}考期通行證</h2>
       <p>考期通行證一次購買、涵蓋{PASS_LEVEL_NAME[level]}所有科目，有效至該梯次考試日後 30 天；免費會員仍可練習並保留作答歷史。</p>
+      <p class="muted">購買前請閱讀<a href="/terms/">服務條款</a>與<a href="/refund/">退款政策</a>。</p>
       <div class="row">
         <a class="btn" href="/pricing/">查看價格</a>
         {account.status === 'anonymous' && <a class="btn ghost" href={`/login/?next=${encodeURIComponent(location.pathname + location.search)}`}>已購買？登入</a>}

@@ -13,19 +13,19 @@
 
 ### 1. 確認初級考試規格
 
-雲端環境連不到 ipas.org.tw，下列數字是依搜尋摘要推論，請對照官方 115 年度簡章：
+已於 2026-11-04 對照官方 115 年度簡章（0410 版）確認，GLOSSARY「科目」「證書類別」已更新：
 
-- [ ] 每科作答時間 **75 分鐘**
-- [ ] 每科 **70 分**及格（以及是否另有「總分」門檻）
-- [ ] 每科 **50 題**單選
+- [x] 每科作答時間 **75 分鐘**
+- [x] 每科 **70 分**及格；初級證書另有條件（同時報考：平均 70 分且每科不低於 60 分；非同時報考：每科 70 分），**程式尚未實作證書判定**
+- [x] 每科 **50 題**單選
 
-要改的話改 `src/lib/levels.ts` 的 `SUBJECT_INFO[11]`、`SUBJECT_INFO[12]`（`minutes`、`passScore`），GLOSSARY「科目」一併更新。
+之後若簡章改了，改 `src/lib/levels.ts` 的 `SUBJECT_INFO[11]`、`SUBJECT_INFO[12]`（`minutes`、`passScore`），GLOSSARY 一併更新。
 
 ### 2. 填初級考試日期
 
-- [ ] `src/config.ts` → `EXAM_DATES.beginner` 填你要準備的初級梯次日期（例如 `'2027-03-20'`）。
+- [x] `src/config.ts` → `EXAM_DATES.beginner` 已填 `'2026-11-07'`（115 年度初級最後一梯，簡章 0410 版；全年梯次為 3/21、5/16、8/15、11/7）。
 
-沒填之前，首頁不顯示初級考試倒數，讀書計畫也會提示要先設定日期。
+11/7 考完後，倒數會顯示「本梯次已結束」；請改成下一個初級梯次日期，並同步新增 `exam_sittings` migration（`docs/payments.md`「新增梯次」）。設為 `null` 則不顯示倒數，讀書計畫會提示先設定日期。
 
 ### 3. 抽查初級題目
 
@@ -39,7 +39,9 @@ npm run dev
 
 ### 4. 本機建置的已知問題
 
-雲端 worktree 位於 `.claude/` 隱藏資料夾時 `astro build` 會報 `Tsconfig not found astro/tsconfigs/strict`；一般資料夾的 clone 不受影響。若本機也遇到，確認是在正常路徑底下建置。
+- [x] 已在正常路徑的 worktree 驗證：`npx vitest run` 與 `npm run build` 皆通過，無此問題。
+
+（雲端 worktree 位於 `.claude/` 隱藏資料夾時 `astro build` 會報 `Tsconfig not found astro/tsconfigs/strict`；一般資料夾不受影響。）
 
 ## 決策（需要你拍板）
 
@@ -56,21 +58,20 @@ ADR 0003 目前是 `proposed`，請確認後改成 `accepted`：
 
 詳細指令見 `docs/payments.md`「上線檢查清單」。
 
-1. [ ] **D1**：`npx wrangler d1 create ipas`，把 `database_id` 填入 `wrangler.app.jsonc`，再執行 migrations：
+1. **D1**：
+   - [x] `npx wrangler d1 create ipas`，`database_id` 已填入 `wrangler.app.jsonc`。
+   - [ ] 執行 migrations：
    ```bash
    npx wrangler d1 migrations apply ipas --remote -c wrangler.app.jsonc
    ```
-2. [ ] **初級梯次**：新增 migration 把初級梯次寫進 `exam_sittings`（目前只有中級 2026-11-14）。範例在 `docs/payments.md`「新增梯次」。
+2. [x] **初級梯次**：`migrations/0003_sitting_2026_11_beginner.sql` 已新增初級 2026-11-07（與中級 2026-11-14）；套用 migrations 後才會生效。之後的梯次照 `docs/payments.md`「新增梯次」。
 3. [ ] **秘密**：`BETTER_AUTH_SECRET`（`openssl rand -base64 32`）。清單見 `.dev.vars.example`，用 `npx wrangler secret put <NAME> -c wrangler.app.jsonc` 設定。
 4. [ ] **Google OAuth**：重新導向 URI `https://ipas.zhenhe-co.com/api/auth/callback/google`，並發布 OAuth 同意畫面。
 5. [ ] **Email**：Resend 驗證 `zhenhe-co.com` 寄件網域，設定 `RESEND_API_KEY`。
 6. [ ] **PAYUNi sandbox**：取得測試商店 MerID／HashKey／HashIV，實際走一次 購買 → 付款成功 → `/account/` 顯示付費會員；也測付款失敗與重複通知。
-7. [ ] **核對 PAYUNi 假設**（程式中標註「待以 PAYUNi 官方文件確認」，共 10 項，見 `docs/payments.md` 末段）。最需要看官方文件確認的三項：
-   - 付款通知（Notify）的欄位名稱與 `TradeStatus` 代碼（目前假設 1 = 已付款）
-   - Notify 要回什麼（目前回 `SUCCESS`；第三方 SDK 範例是 `1|OK`）
-   - `MerTradeNo` 長度與允許字元
+7. [ ] **核對 PAYUNi**：官方文件已於 2026-11-04 核對（`docs/research/payuni-upp-verification.md`），Version 已改 2.0、付款結果判斷已修正、已送 `TradeInvoice=1`。只剩一項需確認：**Notify 要回什麼字串、失敗如何重送**（目前回 `SUCCESS`；官方文件沒寫，需 sandbox 實測或來信 service@payuni.com.tw）。同時在 sandbox 確認 Version 2.0 與 `TradeInvoice=1` 實際可用。
 8. [ ] **統一發票**：PAYUNi 後台啟用自動開立（振禾有限公司，統編 83446730）。
-9. [ ] **服務條款／退款政策頁**：尚未建立。需寫明 7 天內未使用付費功能可退款、結帳時同意「數位內容立即提供、不適用 7 天鑑賞期」。
+9. [x] **服務條款／退款政策頁**：已建立 `/terms/`、`/refund/`（最後更新 2026-11-04），頁尾、價目頁、付費牆都有連結，結帳勾選框已改為同意服務條款與退款政策。上線前請自行確認內容（尤其是帳號資料刪除、準據法、非官方網站的說法）。
 10. [ ] **切換部署**：
     ```bash
     PUBLIC_PAYWALL_ENABLED=1 npx astro build && npx wrangler deploy -c wrangler.app.jsonc

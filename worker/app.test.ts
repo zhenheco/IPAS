@@ -12,7 +12,7 @@ const IV = PAYUNI.PAYUNI_HASH_IV;
 async function notifyBody(o: { merTradeNo: string; amount: number; tradeStatus?: string; status?: string; merId?: string }) {
   const data = { Status: o.status ?? 'SUCCESS', MerID: o.merId ?? PAYUNI.PAYUNI_MER_ID, MerTradeNo: o.merTradeNo, TradeNo: `T${o.merTradeNo}`, TradeAmt: o.amount, TradeStatus: o.tradeStatus ?? '1' };
   const EncryptInfo = await encryptInfo(data, KEY, IV);
-  return new URLSearchParams({ Status: data.Status, MerID: data.MerID, Version: '1.0', EncryptInfo, HashInfo: await hashInfo(EncryptInfo, KEY, IV) }).toString();
+  return new URLSearchParams({ Status: data.Status, MerID: data.MerID, Version: '2.0', EncryptInfo, HashInfo: await hashInfo(EncryptInfo, KEY, IV) }).toString();
 }
 
 async function setup(opts: Parameters<typeof harness>[0] = {}) {
@@ -51,12 +51,13 @@ describe('routing', () => {
 });
 
 describe('pricing + checkout', () => {
-  it('anonymous pricing shows the early-bird price 74 days before the exam', async () => {
+  it('anonymous pricing lists the seeded 梯次 (初級 11/07, 中級 11/14) with early-bird prices 67/74 days before the exam', async () => {
     const h = harness();
-    const j = await (await h.fetchApp('/api/pricing')).json() as { sittings: { id: string; quote: { priceType: string; amount: number }; validUntil: string }[]; signedIn: boolean };
+    const j = await (await h.fetchApp('/api/pricing')).json() as { sittings: { id: string; level: string; examDate: string; quote: { priceType: string; amount: number }; validUntil: string }[]; signedIn: boolean };
     expect(j.signedIn).toBe(false);
-    expect(j.sittings).toHaveLength(1);
-    expect(j.sittings[0]).toMatchObject({ id: SITTING, quote: { priceType: 'early', amount: 490 }, validUntil: '2026-12-14T15:59:59.999Z' });
+    expect(j.sittings).toHaveLength(2);
+    expect(j.sittings[0]).toMatchObject({ id: 'beginner-2026-11-07', level: 'beginner', examDate: '2026-11-07', quote: { priceType: 'early', amount: 490 }, validUntil: '2026-12-07T15:59:59.999Z' });
+    expect(j.sittings[1]).toMatchObject({ id: SITTING, quote: { priceType: 'early', amount: 490 }, validUntil: '2026-12-14T15:59:59.999Z' });
   });
   it('requires same origin, login and explicit consent', async () => {
     const s = await setup();
@@ -136,6 +137,16 @@ describe('PAYUNi notify', () => {
     expect(s.rows('select status from orders')).toEqual([{ status: 'pending' }]);
     expect(s.rows('select count(*) as n from passes')).toEqual([{ n: 0 }]);
   });
+  it('an UNKNOWN / UNAPPROVED Status or TradeStatus 8 leaves the order pending, and the later success still fulfils', async () => {
+    const s = await setup();
+    const c = await s.checkout();
+    await s.notify({ merTradeNo: c.merTradeNo, amount: 490, status: 'UNKNOWN', tradeStatus: '' });
+    await s.notify({ merTradeNo: c.merTradeNo, amount: 490, status: 'unapproved', tradeStatus: '' });
+    await s.notify({ merTradeNo: c.merTradeNo, amount: 490, tradeStatus: '8' });
+    expect(s.rows('select status from orders')).toEqual([{ status: 'pending' }]);
+    await s.notify({ merTradeNo: c.merTradeNo, amount: 490 });
+    expect(s.rows('select status from orders')).toEqual([{ status: 'paid' }]);
+  });
   it('failed payment marks failed; a later success on the same order still fulfils', async () => {
     const s = await setup();
     const c = await s.checkout();
@@ -190,6 +201,7 @@ describe('renewal, refund, paid-feature usage', () => {
     s.db.raw.exec(`insert into exam_sittings (id, level, exam_date, name, sale_open, created_at) values ('intermediate-2027-05-22', 'intermediate', '2027-05-22', 'x', 1, 'x'), ('beginner-2027-03-20', 'beginner', '2027-03-20', 'y', 1, 'y')`);
     const j = await (await s.api.get('/api/pricing')).json() as { sittings: { id: string; owned: boolean; purchasable: boolean; quote: { priceType: string; amount: number } }[] };
     expect(j.sittings.map((x) => [x.id, x.owned, x.purchasable, x.quote.priceType, x.quote.amount])).toEqual([
+      ['beginner-2026-11-07', false, true, 'renewal', 390],
       [SITTING, true, false, 'renewal', 390], // 已持有：不可再購買
       ['beginner-2027-03-20', false, true, 'renewal', 390],
       ['intermediate-2027-05-22', false, true, 'renewal', 390],

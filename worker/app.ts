@@ -118,7 +118,7 @@ export function createApp(deps: AppDeps = {}) {
   }
 
   // NotifyURL：PAYUNi 伺服器對伺服器通知。
-  // 待以 PAYUNi 官方文件確認：商店應回應的內容（目前回 200 + "SUCCESS"）與失敗時的重送機制。
+  // 待確認（官方文件未載明）：NotifyURL 應回應的內容（目前回 200 + "SUCCESS"）與失敗時的重送機制；需 sandbox 實測或詢問 service@payuni.com.tw。
   app.post('/api/payuni/notify', async (c) => {
     const r = await handlePayuni(c);
     return r.status === 200 ? c.text('SUCCESS') : c.text(r.error, r.status);

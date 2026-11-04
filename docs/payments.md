@@ -76,8 +76,8 @@ D1 不支援互動式交易，需要「全部成功或全部失敗」的寫入�
 3. 使用者在 PAYUNi 付款。
 4. **NotifyURL**（`/api/payuni/notify`，伺服器對伺服器）：驗證 HashInfo → 解密 → 內外層 MerID 必須是本商店 → 依 MerTradeNo 找訂單 → `TradeAmt` 必須等於訂單金額 → 判斷結果：
    - 已付款：在同一個 batch 中「訂單 pending/failed → paid」並建立通行證；建立通行證的 SQL 以「訂單已由本次通知標記為 paid」為條件，重複或並行的通知不會重複建立，已退款的訂單也不會被補發。
-   - 失敗：pending → failed（之後同一訂單若成功仍可入帳）。
-   - 其他（例如 ATM／超商已取號未付款）：維持 pending。
+   - 失敗（TradeStatus 2／3 或明確錯誤的外層 Status）：pending → failed（之後同一訂單若成功仍可入帳）。
+   - 其他（TradeStatus 0／8、外層 Status 為 UNKNOWN／UNAPPROVED，例如 ATM／超商已取號未付款）：維持 pending。
    - 同一使用者同一梯次已有通行證（兩筆訂單都付款）：訂單標記 `note = duplicate_pass`，需人工退款。
 5. **ReturnURL**（`/api/payuni/return`）：瀏覽器被帶回時做相同的驗證與冪等入帳（避免 Notify 延遲），再 303 導向 `/account/?payment=paid|pending|failed|error`。
 6. 統一發票：由 PAYUNi 商店後台設定自動開立（振禾有限公司，統編 83446730），本系統不另外處理。
@@ -87,13 +87,13 @@ D1 不支援互動式交易，需要「全部成功或全部失敗」的寫入�
 - `GET /api/me` → `{ user, passes, entitlements: { beginner|intermediate: { paid, validUntil } }, orders }`。
 - `PAYWALL_ENABLED` 為 false、或 `/api/me` 離線／404／非 JSON 時，`AccountState = disabled`：所有功能開放、不顯示廣告（與目前完全相同）。
 - 免費：練習、作答歷史。付費（需該級別的有效通行證）：單科模考、全真模考、錯題本、錯題重做、弱點分析、讀書計畫、無廣告。
-- 廣告：`AdSlot` 只在 paywall 啟用、`PUBLIC_ADSENSE_CLIENT` 已設定、帳號狀態已載入且使用者不是付費會員時顯示。
+- 廣告：`AdSlot` 只在 paywall 啟用、`PUBLIC_ADSENSE_CLIENT` 已設定、帳號狀態已載入且使用者沒有該頁面所屬級別的有效通行證時顯示（中級通行證不隱藏初級頁面的廣告）。
 - 升級提醒：成績頁對免費會員每個台灣日曆日至多顯示一次（`shouldShowUpgradePrompt`，上次顯示時間存在 localStorage）。
 
 ### 退款
 
 1. 資格（`refundEligibility`）：訂單已付款、付款後 7×24 小時內、該通行證 `first_paid_feature_used_at` 為空、尚未申請過。
-2. 前端在主動使用付費功能時呼叫 `reportPaidFeatureUse(level, feature)` → `POST /api/usage/paid-feature`，記錄該級別有效通行證的首次使用時間（只記第一次）；「無廣告」不算使用。
+2. 前端在使用付費功能時呼叫 `reportPaidFeatureUse(level, feature)`：開始單科模考／全真模考／錯題重做（`beginSession`），以及 `<Paywall>` 對有通行證的會員實際顯示單科模考、全真模考、錯題本、錯題重做、弱點分析、讀書計畫內容時（`reportPaidFeatureUseOnce`，同頁同級別同功能只送一次）。呼叫 `POST /api/usage/paid-feature` → `POST /api/usage/paid-feature`，記錄該級別有效通行證的首次使用時間（只記第一次）；「無廣告」不算使用。
 3. 使用者在 `/account/` 按「申請退款」→ `POST /api/refund-request`，訂單記錄 `refund_requested_at`、`refund_reason`。
 4. 擁有者在 PAYUNi 後台退款後，以 `ADMIN_EMAILS` 中的帳號（email 需已驗證）呼叫 `POST /api/admin/orders/:id/refunded`（同一 batch：訂單 → refunded、通行證 → revoked）。例如在已登入的 `/account/` 頁面於瀏覽器 console 執行：
    ```js
@@ -144,7 +144,7 @@ INSERT INTO exam_sittings (id, level, exam_date, name, sale_open, created_at)
 VALUES ('intermediate-2027-05-22', 'intermediate', '2027-05-22', '2027 年 5 月中級', TRUE, '2026-11-04T00:00:00.000Z');
 ```
 
-然後 `npx wrangler d1 migrations apply ipas --remote -c wrangler.app.jsonc`。停止販售：`UPDATE exam_sittings SET sale_open = FALSE WHERE id = …`。初級梯次日期尚未確認，未預先建立。
+然後 `npx wrangler d1 migrations apply ipas --remote -c wrangler.app.jsonc`。停止販售：`UPDATE exam_sittings SET sale_open = FALSE WHERE id = …`。初級 2026-11-07 已由 `migrations/0003_sitting_2026_11_beginner.sql` 建立（115 年度初級梯次 3/21、5/16、8/15、11/7；後續梯次比照新增）。
 
 ## 上線檢查清單
 
@@ -157,27 +157,34 @@ VALUES ('intermediate-2027-05-22', 'intermediate', '2027-05-22', '2027 年 5 月
    - 商店後台設定 NotifyURL／ReturnURL 允許的網址（若後台有此設定）：`https://ipas.zhenhe-co.com/api/payuni/notify`、`/api/payuni/return`。
    - 實際走一次：購買 → 付款成功 → 確認 Worker log 無驗證錯誤、訂單 paid、通行證建立、`/account/` 顯示付費會員。
    - 測試付款失敗、重複通知（PAYUNi 後台若可重送）、ReturnURL 導回。
-   - **逐條核對下方「待確認假設」**，有差異就改 `worker/payuni.ts` 並更新測試向量。
+   - 核對下方「PAYUNi 官方文件核對結果」：官方文件已確認大部分項目，只剩第 7 項（Notify 回應與重送）及 Version 2.0／`TradeInvoice` 需在 sandbox 實測。
    - 確認 PAYUNi 後台已啟用自動開立統一發票（振禾有限公司，統編 83446730）。
 6. **切換部署**：`PUBLIC_PAYWALL_ENABLED=1 npx astro build && npx wrangler deploy -c wrangler.app.jsonc`（Worker 名稱同為 `ipas`，路由相同，會取代純靜態版本；回退時改用 `npx wrangler deploy`（`wrangler.jsonc`）並以未設旗標的建置部署即可）。
 7. **正式收款**：換成正式商店秘密、`PAYUNI_ENV=production`，以小額實際購買並退款一次。
 8. 設定 `ADMIN_EMAILS`，確認退款標記流程。
-9. 退款、鑑賞期同意與付費功能說明需同步寫入網站的服務條款／退款政策頁（尚未建立）。
+9. 退款、鑑賞期同意與付費功能說明已寫入服務條款／退款政策頁（`src/pages/terms.astro`、`src/pages/refund.astro`）；調整退款規則或價格時需同步檢查這兩頁與結帳勾選文字（`src/components/Pricing.tsx`）。
 
-## 待以 PAYUNi 官方文件確認的假設
+## PAYUNi 官方文件核對結果（2026-11-04）
 
-撰寫時無法連線 payuni.com.tw 官方文件。已驗證：本實作的加密輸出與「官方 PHP 範例寫法」（以 PHP 8.3 執行 `openssl_encrypt(..., 'aes-256-gcm', ...)` + `bin2hex(密文:::base64(tag))` + `strtoupper(hash('sha256', key.加密字串.iv))`）**位元組完全一致**（測試向量在 `worker/payuni.test.ts`）；並與第三方套件 `payuni-sdk-ts` 1.1.2（自稱改寫自官方 .NET SDK）的端點、Version、加解密、雜湊與欄位名稱一致。仍未經官方文件確認的項目（程式中皆標註「待以 PAYUNi 官方文件確認」）：
+逐項依據見 [docs/research/payuni-upp-verification.md](research/payuni-upp-verification.md)。以下**全部尚未經 sandbox 實測**。
 
-1. UPP 端點 `https://sandbox-api.payuni.com.tw/api/upp`／`https://api.payuni.com.tw/api/upp`，`Version=1.0`。
-2. HashKey 32 字元、HashIV 16 字元，trim 後直接以 UTF-8 位元組作為 AES-256 金鑰與 GCM IV；tag 16 位元組。
-3. UPP 加密參數名稱與必填：`MerID`、`MerTradeNo`、`TradeAmt`（整數元）、`Timestamp`（Unix 秒）、`ProdDesc`、`UsrMail`、`ReturnURL`、`NotifyURL`、`BackURL`；未指定付款方式時顯示商店啟用的全部方式。
-4. `MerTradeNo` 長度上限與允許字元（目前產生 20 字元英數：`IP` + 台灣時間 yyMMddHHmmss + 6 碼）。
-5. Notify／Return 表單欄位為 `Status`、`MerID`、`Version`、`EncryptInfo`、`HashInfo`；解密後欄位為 `Status`、`MerID`、`MerTradeNo`、`TradeNo`、`TradeAmt`、`TradeStatus`（query string；也相容 JSON）。
-6. 付款結果判斷：`Status=SUCCESS` 且 `TradeStatus=1` 為已付款；`TradeStatus` 2／3 為失敗／取消；其他（如 0 = 已取號未付款）視為待付款。
-7. NotifyURL 應回應的內容（目前回 HTTP 200 + `SUCCESS`；第三方 SDK 範例為 `1|OK`）與失敗重送機制。
-8. ReturnURL 是否也帶相同的加密結果（目前假設相同並一併入帳，冪等）。
-9. 退款：目前由擁有者在 PAYUNi 後台手動退款，未串接退款 API。
-10. 統一發票由 PAYUNi 後台設定自動開立，不需在 UPP 參數中帶發票資訊。
+已對照官方文件／官方 PHP SDK 確認：
+
+1. UPP 端點（sandbox／production）；`Version` 已改為官方固定的 **2.0**（1.0 仍可用，但電子發票功能不支援舊版）。
+2. 加解密（AES-256-GCM、`bin2hex(密文:::base64(tag))`、HashInfo = `strtoupper(sha256(HashKey + EncryptInfo + HashIV))`）；HashKey 32／HashIV 16 字元僅見於官方範例，實際值以 sandbox 取得的為準。測試向量在 `worker/payuni.test.ts`。
+3. UPP 參數：必填 `MerID`、`MerTradeNo`、`TradeAmt`、`Timestamp`、`ProdDesc`（最長 550）；`ReturnURL`／`NotifyURL`／`BackURL`／`UsrMail` 條件式；NotifyURL 僅支援 80／443 埠；未指定付款方式時依商店後台預設。
+4. `MerTradeNo` 最長 25 字元、`[A-Za-z0-9_-]`、10 分鐘內不可重複（本站產生 20 字元英數）。
+5. Notify 以 Form Post 回傳 `Status`、`MerID`、`Version`、`EncryptInfo`、`HashInfo`；解密後有 `MerTradeNo`、`TradeNo`、`TradeAmt`、`TradeStatus` 等。
+6. 付款結果：`TradeStatus` 0 取號成功、1 已付款、2 付款失敗、3 付款取消、8 訂單待確認。`paymentOutcome` 規則：TradeStatus 2／3 → 失敗；外層 `Status` 為 `UNKNOWN`（等待授權結果逾期／系統忙碌）或 `UNAPPROVED`（不分大小寫）→ 待付款，不入帳；`SUCCESS` + TradeStatus 1 → 已付款；`SUCCESS` + 0／8 → 待付款；其他 Status → 失敗。
+7. （不在此列，見下）
+8. ReturnURL 為前景通知（Form Post），格式與 Notify 相同（依官方 SDK 推得）；以 NotifyURL 為準。本站兩者都驗證並冪等入帳。
+9. 退款 API 存在但**未串接**：信用卡 `POST /api/trade/close`（`CloseType=2`，180 天內）；ATM／超商 `/api/trade/offline/refund` 需申請核准。目前維持擁有者在 PAYUNi 後台手動退款。
+10. 統一發票：`buildCheckout` 送 `TradeInvoice=1`；發票仍依 PAYUNi 後台電子發票設定開立，後台必須先完成設定。
+
+**仍待確認：**
+
+- **第 7 項**：NotifyURL 應回應的內容與失敗重送規則，官方文件沒有載明（只有「交易結果請以 NotifyURL 為主」與「15 分鐘後可查詢交易」）。目前回 HTTP 200 + `SUCCESS`（第三方 SDK 範例為 `1|OK`）。需 sandbox 實測，或來信 service@payuni.com.tw 詢問。
+- sandbox 實測 Version 2.0 與 `TradeInvoice=1` 是否如預期（請求被接受、發票開立）。
 
 ## 其他推論（非 PAYUNi）
 
