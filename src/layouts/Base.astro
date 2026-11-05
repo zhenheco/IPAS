@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { adsenseScriptSrc } from '../lib/adsense';
 const { title } = Astro.props;
 const nav = [
   ['/', '首頁'], ['/plan/', '讀書計畫'], ['/practice/', '練習'], ['/exam/', '單科模考'], ['/full/', '全真模考'],
@@ -8,6 +9,7 @@ const nav = [
 // 價目與帳號 appear only once the owner builds with PUBLIC_PAYWALL_ENABLED=1
 if (import.meta.env.PUBLIC_PAYWALL_ENABLED === '1') nav.push(['/pricing/', '價目'], ['/account/', '帳號']);
 const path = Astro.url.pathname;
+const adsenseSrc = adsenseScriptSrc(import.meta.env.PUBLIC_ADSENSE_CLIENT);
 ---
 <!doctype html>
 <html lang="zh-Hant">
@@ -16,6 +18,7 @@ const path = Astro.url.pathname;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <title>{title} | iPAS AI 應用規劃師練習</title>
+    {adsenseSrc && <script is:inline async src={adsenseSrc} crossorigin="anonymous" data-adsbygoogle="1"></script>}
   </head>
   <body>
     <header class="top">
