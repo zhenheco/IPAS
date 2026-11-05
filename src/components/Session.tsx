@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { MODE_LABEL } from '../config';
-import { subjectLabel } from '../lib/levels';
+import { levelOf, subjectLabel } from '../lib/levels';
 import { applyEdit, applySubmit, type Edit } from '../lib/session';
 import { exportJson } from '../lib/storage';
 import type { Session as SessionRecord } from '../lib/types';
 import { formatClock, remainingMs, shouldAutoSubmit } from '../lib/timer';
+import AdSlot from './AdSlot';
 import { Loading, SaveWarning, go, isUnsaved, useApp, useBank } from './app';
 import { Rich } from './Rich';
 
@@ -134,6 +135,7 @@ export default function Session() {
         ))}
       </div>
       <p class="muted legend"><i class="done" /> 已作答 <i class="flag" /> 已標記 <i /> 未作答</p>
+      <AdSlot slot="session" level={levelOf(active.subject)} />
     </>
   );
 }
