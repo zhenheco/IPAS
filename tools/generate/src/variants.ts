@@ -10,8 +10,10 @@ import { getSubject, subjectItems } from "./syllabus.js";
 import type { ItemRef, Question, RawQuestion, SyllabusSubject, Syllabus, Usage } from "./types.js";
 
 /*
- * Variants: for each official question of a subject, N original questions that test the same 知識點 and reasoning
- * in a different scenario. They are filed in the normal subject file with source "original" and ids `<item>-V<NNN>`
+ * Variants: for each official question of a subject, N questions that test the same 知識點 and reasoning
+ * in a different scenario. They count as adaptations of official questions, so they are for the owner's personal study
+ * only (ADR 0004): the CLI files them under data/official/variants (git-ignored) and runVariants refuses any outFile in
+ * a `questions` directory. They carry source "original" and ids `<item>-V<NNN>`
  * (the V keeps them out of the per-item quota and out of the generator's numbering). Which variants belong to which
  * official question is recorded in .variants-progress.json ({ officialId: [variantId, ...] }) so a run resumes; ids
  * missing from the subject file no longer count and are regenerated.
@@ -79,6 +81,7 @@ async function readProgress(file: string): Promise<Progress> {
 }
 
 export async function runVariants(o: VariantOptions): Promise<VariantResult> {
+  if (path.basename(path.dirname(path.resolve(o.outFile))) === "questions") throw new Error(`${o.outFile} is in the public bank; variants of official questions must stay local (data/official/variants)`);
   const release = await acquireLock(path.join(path.dirname(o.outFile), ".generate.lock")); // same lock as runGeneration
   try {
     return await variants(o);

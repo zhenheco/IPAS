@@ -21,6 +21,19 @@ describe('loadBank', () => {
     expect(ids).toContain('fx-official-1');
     expect(ids).toContain('fx-official-3');
   });
+  it('loads data/official/variants/*.json only with includeOfficial, and never the dotfile .variants-progress.json', () => {
+    const dir = emptyDir();
+    const q = (id: string) => ({ id, subject: 3, item: 'L23101', stem: 's', options: ['a', 'b', 'c', 'd'], answer: 0, explanation: '', related: '', source: 'original' });
+    const write = (rel: string, data: unknown) => {
+      fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
+      fs.writeFileSync(path.join(dir, rel), JSON.stringify(data));
+    };
+    write('questions/subject-3.json', [q('L23101-001')]);
+    write('official/variants/subject-3.json', [q('L23101-V001')]);
+    write('official/variants/.variants-progress.json', [q('L23101-V999')]); // shaped like a bank on purpose
+    expect(loadBank({ dataDir: dir }).questions.map((x) => x.id)).toEqual(['L23101-001']);
+    expect(loadBank({ dataDir: dir, includeOfficial: true }).questions.map((x) => x.id)).toEqual(['L23101-001', 'L23101-V001']);
+  });
   it('loads the syllabus', () => {
     const { syllabus } = loadBank({ dataDir: fixtures });
     expect(syllabus.subjects.map((s) => s.subject)).toEqual([1, 2, 3]);

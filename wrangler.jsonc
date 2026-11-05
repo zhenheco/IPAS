@@ -1,6 +1,8 @@
 {
   "name": "ipas",
   "compatibility_date": "2026-11-01",
+  // 部署前檢查 dist 不含官方題或變體題（ADR 0004）；先自行 astro build
+  "build": { "command": "npm run check:dist" },
   "assets": {
     "directory": "./dist",
     "not_found_handling": "404-page"

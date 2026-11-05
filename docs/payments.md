@@ -159,7 +159,7 @@ VALUES ('intermediate-2027-05-22', 'intermediate', '2027-05-22', '2027 年 5 月
    - 測試付款失敗、重複通知（PAYUNi 後台若可重送）、ReturnURL 導回。
    - 核對下方「PAYUNi 官方文件核對結果」：官方文件已確認大部分項目，只剩第 7 項（Notify 回應與重送）及 Version 2.0／`TradeInvoice` 需在 sandbox 實測。
    - 確認 PAYUNi 後台已啟用自動開立統一發票（振禾有限公司，統編 83446730）。
-6. **切換部署**：`PUBLIC_PAYWALL_ENABLED=1 npx astro build && npx wrangler deploy -c wrangler.app.jsonc`（Worker 名稱同為 `ipas`，路由相同，會取代純靜態版本；回退時改用 `npx wrangler deploy`（`wrangler.jsonc`）並以未設旗標的建置部署即可）。
+6. **切換部署**：`npm run deploy:app`（即 `PUBLIC_PAYWALL_ENABLED=1 astro build`、`npm run check:dist`、`wrangler deploy -c wrangler.app.jsonc`；Worker 名稱同為 `ipas`，路由相同，會取代純靜態版本；回退時改用 `npm run deploy`（`wrangler.jsonc`，未設旗標的建置）即可）。
 7. **正式收款**：換成正式商店秘密、`PAYUNI_ENV=production`，以小額實際購買並退款一次。
 8. 設定 `ADMIN_EMAILS` 秘密（`printf "%s" "<擁有者管理員 Email>" | npx wrangler secret put ADMIN_EMAILS -c wrangler.app.jsonc`），確認退款標記流程。
 9. 退款、鑑賞期同意與付費功能說明已寫入服務條款／退款政策頁（`src/pages/terms.astro`、`src/pages/refund.astro`），資料蒐集、cookie 與 AdSense 揭露在隱私權政策頁（`src/pages/privacy.astro`）；調整退款規則或價格時需同步檢查這些頁面與結帳勾選文字（`src/components/Pricing.tsx`）。

@@ -46,6 +46,12 @@ export function parseArgs(argv: string[]): Args {
   };
 }
 
+/** Variants are adaptations of official questions (not allowed to be published, ADR 0004): they live in the git-ignored data/official, never data/questions. */
+export function variantPaths(root: string, subject: number) {
+  const dir = path.join(root, "official", "variants");
+  return { outFile: path.join(dir, `subject-${subject}.json`), progressFile: path.join(dir, ".variants-progress.json") };
+}
+
 export function formatSummary(r: GenerationResult): string {
   const rows = r.perItem.map((s) => `${s.code}  ${s.before + s.added}/${s.target}  (new ${s.added}, dropped ${s.dropped}, rounds ${s.rounds})`);
   return [
@@ -68,8 +74,8 @@ async function main() {
   if (args.variants !== undefined) {
     if (!official.length) throw new Error(`no official questions for subject ${args.subject} in data/official; run import-official first`);
     const r = await runVariants({
-      client, syllabus, subject: args.subject as 1 | 2 | 3, official, perQuestion: args.variants, concurrency: args.concurrency, outFile,
-      progressFile: path.join(root, "questions", ".variants-progress.json"), log: console.log,
+      client, syllabus, subject: args.subject as 1 | 2 | 3, official, perQuestion: args.variants, concurrency: args.concurrency,
+      ...variantPaths(root, args.subject), log: console.log,
     });
     console.log(`\nvariants: ${r.target - r.shortfall}/${r.target} (new ${r.added}, dropped ${r.dropped})`);
     console.log(`total in file: ${r.total}\ntokens: ${r.usage.input} in / ${r.usage.output} out`);

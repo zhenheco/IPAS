@@ -8,6 +8,9 @@
     "preview": "astro preview",
     "test": "vitest run",
     "papers": "npx tsx scripts/build-papers.ts",
+    "check:dist": "npx tsx scripts/check-dist-bank.ts",
+    "deploy": "env -u INCLUDE_OFFICIAL astro build && npm run check:dist && npx wrangler deploy",
+    "deploy:app": "env -u INCLUDE_OFFICIAL PUBLIC_PAYWALL_ENABLED=1 astro build && npm run check:dist && npx wrangler deploy -c wrangler.app.jsonc",
     "typecheck:worker": "tsc --noEmit -p worker",
     "test:worker": "vitest run worker"
   },

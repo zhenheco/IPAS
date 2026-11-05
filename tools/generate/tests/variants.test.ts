@@ -37,6 +37,18 @@ const base = async (client: any, over: object = {}) => {
 
 afterEach(() => vi.restoreAllMocks());
 
+describe("runVariants output location", () => {
+  it("refuses to write into a questions directory (the public bank), before calling the model", async () => {
+    const { client, calls } = variantClient(({ count }) => fresh(count));
+    const dir = path.join(await dirOf(), "questions");
+    await fs.mkdir(dir);
+    const { o } = await base(client, { outFile: path.join(dir, "subject-3.json"), progressFile: path.join(dir, ".variants-progress.json") });
+    await expect(runVariants(o)).rejects.toThrow(/public bank/);
+    expect(calls).toHaveLength(0);
+    expect(await exists(path.join(dir, "subject-3.json"))).toBe(false);
+  });
+});
+
 describe("runVariants", () => {
   it("targets N × official questions, one call per official question, as original questions on the same 知識點", async () => {
     const { client, calls } = variantClient(({ count }) => fresh(count));

@@ -43,6 +43,10 @@ npm run dev
 
 （雲端 worktree 位於 `.claude/` 隱藏資料夾時 `astro build` 會報 `Tsconfig not found astro/tsconfigs/strict`；一般資料夾不受影響。）
 
+### 5. 核對中級評鑑內容的版本
+
+- [ ] 核對中級評鑑內容（`data/syllabus.json`）所依據的官方版本，並補進來源標示（頁尾 `src/layouts/Base.astro` 與 `src/pages/terms.astro`，目前只註明初級依 115 年度簡章 0410 版核對；ADR 0004）。
+
 ## 決策（需要你拍板）
 
 ADR 0003 目前是 `proposed`，請確認後改成 `accepted`：
@@ -76,14 +80,15 @@ ADR 0003 目前是 `proposed`，請確認後改成 `accepted`：
 9. [x] **服務條款／退款政策／隱私權政策頁**：已建立 `/terms/`、`/refund/`（最後更新 2026-11-05）與 `/privacy/`（生效 2026-11-05，含 AdSense cookie 揭露），頁尾、價目頁、付費牆都有連結，結帳勾選框已改為同意服務條款與退款政策。上線前請自行確認內容（尤其是帳號資料刪除、準據法、非官方網站的說法）。
 10. [ ] **切換部署**：
     ```bash
-    PUBLIC_PAYWALL_ENABLED=1 npx astro build && npx wrangler deploy -c wrangler.app.jsonc
+    npm run deploy:app
     ```
-    要回到純靜態版：不設旗標重新建置，再 `npx wrangler deploy`。
+    要回到純靜態版：`npm run deploy`。兩者都會在建置後執行 `npm run check:dist`，dist 含官方題或 `-V<n>` 變體題就中止（ADR 0004）；部署建置不會帶 `INCLUDE_OFFICIAL`。`INCLUDE_OFFICIAL=1` 只用於本機自用建置，不要部署。
 11. [ ] **正式收款**：換正式商店秘密、`PAYUNI_ENV=production`，小額實買一次並退款。
 12. [ ] 設定 `ADMIN_EMAILS` 秘密（倉庫為公開，不要寫進 `wrangler.app.jsonc`；`<擁有者管理員 Email>` 換成實際位址）：`printf "%s" "<擁有者管理員 Email>" | npx wrangler secret put ADMIN_EMAILS -c wrangler.app.jsonc`，確認退款標記流程（目前退款要先在 PAYUNi 後台手動退，再呼叫 `POST /api/admin/orders/:id/refunded`）。
 13. [ ] （選用）廣告：建置時加 `PUBLIC_ADSENSE_CLIENT=ca-pub-…`。
 
 ## 之後可以做
 
-- 匯入官方初級試題（`data/official/`，不公開）後，初級出題可改為以官方題校準；目前出題工具對初級會在沒有官方題時「不校準」直接出題。
-- 初級變體題（`--variants`）目前只支援中級，等有官方初級題再開放。
+- 官方試題與其變體題**只留本機自用，不公開、不販售**（iPAS 2026-11-05 書面回覆，見 `docs/adr/0004-official-questions-policy.md`）。原先「公開區分官方題／原創題」的計畫已取消；`data/questions/` 不得出現官方題或 `-V<n>` 變體（`src/lib/publicBank.test.ts` 會擋）。
+- 本機匯入官方初級試題（`data/official/`，已 git 忽略）後，初級出題可改為以官方題校準；目前出題工具對初級會在沒有官方題時「不校準」直接出題。**待擁有者決定**：用官方題當風格範例來產生收費題庫的原創題，是否可接受（見 ADR 0004「未決」）。決定前，匯入官方題後請先不要跑校準。
+- 變體題（`--variants`）目前只支援中級，輸出固定寫到 `data/official/variants/`（git 忽略），不再寫進 `data/questions/`；僅供個人練習。

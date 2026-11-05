@@ -50,6 +50,14 @@ describe('服務條款 and 退款政策 pages', () => {
   });
 });
 
+describe('iPAS 來源標示 (2026-11-05 iPAS 書面回覆)', () => {
+  const credit = '經濟部產業人才能力鑑定（iPAS）官網公告之評鑑內容（初級依 115 年度簡章 0410 版核對；以官方最新公告為準）';
+  it('footer and terms cite the iPAS site, claim a verified version only for 初級, and defer to the latest announcement', () => {
+    expect(read('src/layouts/Base.astro')).toContain(`評鑑主題與學習範圍參考：${credit}`);
+    expect(read('src/pages/terms.astro')).toContain(`評鑑主題與學習範圍參考${credit}`);
+  });
+});
+
 describe('隱私權政策 page', () => {
   const privacy = read('src/pages/privacy.astro');
   it('uses the same layout, operator and contact as the terms, with effective date 2026-11-05', () => {

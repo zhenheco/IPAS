@@ -3,11 +3,13 @@
 //   D1 已建立（database_id 已填入下方）；如需重建：npx wrangler d1 create ipas
 //   npx wrangler d1 migrations apply ipas --remote -c wrangler.app.jsonc
 //   npx wrangler secret put <NAME> -c wrangler.app.jsonc（清單見 .dev.vars.example）
-//   npx astro build && npx wrangler deploy -c wrangler.app.jsonc
+//   npm run deploy:app
 {
   "name": "ipas",
   "main": "worker/index.ts",
   "compatibility_date": "2026-11-01",
+  // 部署前檢查 dist 不含官方題或變體題（ADR 0004）；先自行 astro build
+  "build": { "command": "npm run check:dist" },
   // Better Auth 需要 AsyncLocalStorage 等 Node 相容 API
   "compatibility_flags": ["nodejs_compat"],
   "assets": {

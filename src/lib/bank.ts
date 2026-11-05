@@ -15,12 +15,12 @@ function readJson(file: string): unknown {
 }
 
 function jsonFiles(dir: string): string[] {
-  try { return fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort().map((f) => path.join(dir, f)); } catch { return []; }
+  try { return fs.readdirSync(dir).filter((f) => f.endsWith('.json') && !f.startsWith('.')).sort().map((f) => path.join(dir, f)); } catch { return []; }
 }
 
 export interface LoadOptions {
   dataDir: string;
-  /** include source "official" (data/official/*.json); off by default */
+  /** include source "official" (data/official/*.json) and local-only variants (data/official/variants/*.json); off by default */
   includeOfficial?: boolean;
   /** dev only: used when dataDir has no question files */
   fallbackDir?: string;
@@ -34,7 +34,7 @@ export function loadBank(o: LoadOptions): Bank {
     root = o.fallbackDir;
     files = jsonFiles(path.join(root, 'questions'));
   }
-  if (o.includeOfficial) files = [...files, ...jsonFiles(path.join(root, 'official'))];
+  if (o.includeOfficial) files = [...files, ...jsonFiles(path.join(root, 'official')), ...jsonFiles(path.join(root, 'official', 'variants'))];
 
   const seen = new Set<string>();
   const questions: Question[] = [];

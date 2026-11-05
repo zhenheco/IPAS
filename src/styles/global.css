@@ -103,8 +103,9 @@ summary { cursor: pointer; }
 .legal ul, .legal ol { padding-left: 1.4em; }
 .legal li { margin: 6px 0; }
 .legal table { margin-top: 8px; }
-.site-foot { max-width: 860px; margin: 0 auto; padding: 0 16px 32px; display: flex; gap: 16px; font-size: .92rem; }
+.site-foot { max-width: 860px; margin: 0 auto; padding: 0 16px 32px; display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: .92rem; }
 .site-foot a { color: var(--muted); }
+.site-foot p { flex-basis: 100%; margin: 0; color: var(--muted); font-size: .85rem; }
 
 .tablewrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; background: var(--surface); }

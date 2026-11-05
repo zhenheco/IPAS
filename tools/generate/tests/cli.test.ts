@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatSummary, parseArgs, requireApiKey } from "../src/cli.js";
+import { formatSummary, parseArgs, requireApiKey, variantPaths } from "../src/cli.js";
 
 describe("requireApiKey", () => {
   it("returns the key from ANTHROPIC_API_KEY", () => expect(requireApiKey({ ANTHROPIC_API_KEY: "sk-x" })).toBe("sk-x"));
@@ -34,6 +34,15 @@ describe("parseArgs 初級", () => {
   it.each([11, 12])("accepts 初級 subject %i", (n) => expect(parseArgs(["--subject", String(n), "--total", "10"]).subject).toBe(n));
   it.each([4, 10, 13])("rejects subject %i", (n) => expect(() => parseArgs(["--subject", String(n), "--total", "10"])).toThrow());
   it("--variants is 中級 only", () => expect(() => parseArgs(["--subject", "11", "--variants", "2"])).toThrow(/中級/));
+});
+
+describe("variantPaths", () => {
+  it("files variants under the git-ignored data/official/variants, never in data/questions", () => {
+    const p = variantPaths("/r/data", 3);
+    expect(p.outFile).toBe("/r/data/official/variants/subject-3.json");
+    expect(p.progressFile).toBe("/r/data/official/variants/.variants-progress.json");
+    expect(`${p.outFile}${p.progressFile}`).not.toContain("questions");
+  });
 });
 
 describe("parseArgs --variants", () => {
