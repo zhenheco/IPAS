@@ -31,8 +31,9 @@
   "services": [{ "binding": "CF_EMAIL", "service": "cf-email" }],
   "vars": {
     "BETTER_AUTH_URL": "https://ipas.zhenhe-co.com",
-    // sandbox | production；正式收款前務必先以 sandbox 完成測試
-    "PAYUNI_ENV": "sandbox",
+    // 收款經 zhenheco affiliate 金流微服務（本站不直接呼叫 PAYUNi）；金鑰與 webhook 秘密見 docs/payments.md
+    "PAYMENT_API_BASE": "https://affiliate.1wayseo.com",
+    "PAYMENT_SITE_CODE": "IPAS",
     // cf-email | console（cf-email 還需 CF_EMAIL_API_KEY 秘密）
     "EMAIL_PROVIDER": "cf-email",
     // 純位址；中繼會移除顯示名稱

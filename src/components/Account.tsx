@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks';
 import { requestRefund, signOut, syncWithAccount, type Me } from '../lib/account';
 import { PAYWALL_ENABLED } from '../lib/entitlement';
+import { paymentNotice } from '../lib/paymentReturn';
 import { PASS_LEVEL_NAME, PASS_LEVELS, PRICE_TYPE_NAME, REFUND_BLOCK_TEXT } from '../lib/pricing';
 import { useApp } from './app';
 import { useAccount } from './useAccount';
@@ -8,12 +9,6 @@ import { useAccount } from './useAccount';
 const fmt = (iso: string) => new Date(iso).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', dateStyle: 'medium', timeStyle: 'short' });
 const fmtDay = (iso: string) => new Date(iso).toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei' });
 
-const PAYMENT_TEXT: Record<string, string> = {
-  paid: '付款成功，考期通行證已開通。',
-  pending: '已收到付款資訊，入帳後會自動開通（ATM／超商付款可能需要一些時間）。',
-  failed: '付款未完成，可回到價格頁重新購買。',
-  error: '付款結果驗證失敗；若已扣款，請來信並附上訂單時間。',
-};
 const STATUS_TEXT: Record<Me['orders'][number]['status'], string> = { pending: '待付款', paid: '已付款', failed: '付款失敗', refunded: '已退款' };
 
 function SyncCard() {
@@ -76,19 +71,20 @@ function Orders({ me, onChange }: { me: Me; onChange: () => void }) {
 
 export default function Account() {
   const [account, reload] = useAccount();
-  const payment = new URLSearchParams(location.search).get('payment');
   if (!PAYWALL_ENABLED || account?.status === 'disabled') {
     return <><h1>帳號</h1><p class="notice">會員功能尚未開放，目前所有功能免登入即可使用。</p></>;
   }
   if (!account) return <p class="muted">載入中…</p>;
   if (account.status === 'anonymous') {
-    return <><h1>帳號</h1>{payment && <p class="notice">{PAYMENT_TEXT[payment] ?? ''} 請登入查看。</p>}<p>尚未登入。</p><a class="btn" href="/login/?next=/account/">登入</a></>;
+    const n = paymentNotice(location.search, [], []);
+    return <><h1>帳號</h1>{n && <p class="notice">{n.text} 請登入查看。</p>}<p>尚未登入。</p><a class="btn" href="/login/?next=/account/">登入</a></>;
   }
   const { me } = account;
+  const notice = paymentNotice(location.search, me.orders, me.passes);
   return (
     <>
       <h1>帳號</h1>
-      {payment && PAYMENT_TEXT[payment] && <p class={`notice${payment === 'paid' ? '' : ' warn'}`} role="status">{PAYMENT_TEXT[payment]}</p>}
+      {notice && <p class={`notice${notice.warn ? ' warn' : ''}`} role="status">{notice.text}</p>}
       <div class="card">
         <p><strong>{me.user.name || me.user.email}</strong> <span class="muted">{me.user.email}</span></p>
         <div class="row">

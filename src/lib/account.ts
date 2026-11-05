@@ -9,7 +9,7 @@ import type { QuestionStat, Session } from './types';
 /** 與 worker/orders.ts 的 Me 相同形狀（前端不直接依賴 Worker 程式碼） */
 export interface Me {
   user: { id: string; email: string; name: string; image: string | null };
-  passes: { id: string; sittingId: string; level: PassLevel; examDate: string; validFrom: string; validUntil: string; firstPaidFeatureUsedAt: string | null; revokedAt: string | null }[];
+  passes: { id: string; orderId: string; sittingId: string; level: PassLevel; examDate: string; validFrom: string; validUntil: string; firstPaidFeatureUsedAt: string | null; revokedAt: string | null }[];
   entitlements: EntitlementMap;
   orders: {
     id: string; merchantTradeNo: string; sittingId: string; level: PassLevel; priceType: PriceType; amount: number;

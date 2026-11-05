@@ -8,9 +8,18 @@ import {
 } from '../src/lib/pricing';
 import { bool, type Store } from './db';
 import type { OrderStatus } from './db/schema';
-import { newMerTradeNo, paymentOutcome, type PayuniResult } from './payuni';
 
 const uuid = () => crypto.randomUUID();
+
+/**
+ * 商店訂單編號（即傳給 affiliate 的 orderId）：IP + 台灣時間 yyMMddHHmmss + 6 碼隨機英數（共 20 字元）。
+ * affiliate 的 orderId 只允許英數與連字號、最長 50 字元；本函式產生的符合。
+ */
+export function newMerTradeNo(now: Date, rand: () => string = () => crypto.randomUUID().replace(/-/g, '').slice(0, 6)): string {
+  const t = new Date(now.getTime() + 8 * 3_600_000).toISOString();
+  const stamp = t.slice(2, 4) + t.slice(5, 7) + t.slice(8, 10) + t.slice(11, 13) + t.slice(14, 16) + t.slice(17, 19);
+  return `IP${stamp}${rand().toUpperCase()}`;
+}
 
 /** 使用者是否曾有一筆已付款（未退款）的通行證 → 適用續購價 */
 async function hasPriorPaidPass(store: Store, userId: string): Promise<boolean> {
@@ -84,37 +93,46 @@ export async function createOrder(store: Store, o: { userId: string; sittingId: 
 
 export type FulfilResult =
   | { ok: true; outcome: 'paid'; orderId: string; alreadyPaid: boolean; passCreated: boolean }
-  | { ok: true; outcome: 'failed' | 'pending'; orderId: string }
+  | { ok: true; outcome: 'failed'; orderId: string }
   | { ok: false; error: 'order_not_found' | 'amount_mismatch' | 'order_refunded' };
 
+/** affiliate webhook 已驗章的付款結果（orderId 即 merchant_trade_no；raw 為留存供對帳的精簡 JSON） */
+export interface Settlement { orderId: string; status: 'SUCCESS' | 'FAILED'; amount: number; tradeNo: string; raw: string }
+
 /**
- * 處理已驗證、解密的 PAYUNi 回傳（NotifyURL 與 ReturnURL 共用）。
+ * 處理 affiliate webhook 的付款結果。
  * 冪等：重複通知不會重複建立通行證；「訂單改為已付款」與「建立通行證」在同一個 batch（交易）中完成，
  * 且建立通行證以「該訂單已由本次通知標記為 paid」為條件，避免已退款/失敗的訂單被補發通行證。
+ * FAILED 之後同一訂單仍可 SUCCESS（買方在 PAYUNi 頁面重試）；已 paid 不會被 FAILED 降級。
  */
-export async function fulfilPayment(store: Store, r: PayuniResult, now: Date): Promise<FulfilResult> {
-  const order = await store.db.selectFrom('orders').selectAll().where('merchant_trade_no', '=', r.merTradeNo).executeTakeFirst();
+export async function fulfilPayment(store: Store, r: Settlement, now: Date): Promise<FulfilResult> {
+  const order = await store.db.selectFrom('orders').selectAll().where('merchant_trade_no', '=', r.orderId).executeTakeFirst();
   if (!order) return { ok: false, error: 'order_not_found' };
-  if (r.tradeAmt !== order.amount_twd) return { ok: false, error: 'amount_mismatch' };
-  const outcome = paymentOutcome(r);
+  if (r.amount !== order.amount_twd) return { ok: false, error: 'amount_mismatch' };
   const ts = now.toISOString();
 
-  if (outcome !== 'paid') {
-    await store.db.updateTable('orders').set({ status: outcome === 'failed' ? 'failed' : order.status, last_notify: r.raw, updated_at: ts })
+  if (r.status === 'FAILED') {
+    await store.db.updateTable('orders').set({ status: 'failed', last_notify: r.raw, updated_at: ts })
       .where('id', '=', order.id).where('status', 'in', ['pending', 'failed']).execute();
-    return { ok: true, outcome, orderId: order.id };
+    return { ok: true, outcome: 'failed', orderId: order.id };
   }
   if (order.status === 'refunded') return { ok: false, error: 'order_refunded' };
   if (order.status === 'paid') return { ok: true, outcome: 'paid', orderId: order.id, alreadyPaid: true, passCreated: false };
 
   const sitting = await store.db.selectFrom('exam_sittings').select(['exam_date']).where('id', '=', order.sitting_id).executeTakeFirstOrThrow();
   const v = passValidity(sitting.exam_date, now);
-  const tradeNo = r.tradeNo || r.merTradeNo;
+  const tradeNo = r.tradeNo || r.orderId;
   const passId = uuid();
   const db = store.db;
-  const [upd, ins] = await store.atomic([
+  const [upd, react, ins] = await store.atomic([
     db.updateTable('orders').set({ status: 'paid', paid_at: ts, payuni_trade_no: tradeNo, last_notify: r.raw, updated_at: ts })
       .where('id', '=', order.id).where('status', 'in', ['pending', 'failed']),
+    // 退款後重買同一梯次：UNIQUE(user_id, sitting_id) 被已撤銷的舊通行證佔住，改把那一列指向新訂單並重新啟用（舊訂單仍是
+    // refunded、保有 refunded_at，退款歷史在 orders；首次使用付費功能的紀錄清空，使新訂單的退款資格重新計算）
+    db.updateTable('passes').set({ order_id: order.id, valid_from: v.validFrom, valid_until: v.validUntil, revoked_at: null, first_paid_feature_used_at: null, first_paid_feature: null, created_at: ts })
+      .where('user_id', '=', order.user_id).where('sitting_id', '=', order.sitting_id).where('revoked_at', 'is not', null)
+      .where((eb) => eb.exists(eb.selectFrom('orders').select('id')
+        .where('id', '=', order.id).where('status', '=', 'paid').where('paid_at', '=', ts).where('payuni_trade_no', '=', tradeNo))),
     db.insertInto('passes')
       .columns(['id', 'user_id', 'sitting_id', 'level', 'valid_from', 'valid_until', 'order_id', 'created_at'])
       .expression(db.selectNoFrom([
@@ -126,12 +144,12 @@ export async function fulfilPayment(store: Store, r: PayuniResult, now: Date): P
       .onConflict((oc) => oc.doNothing()),
   ]);
   if (upd.changes === 0) return { ok: true, outcome: 'paid', orderId: order.id, alreadyPaid: true, passCreated: false };
-  if (ins.changes === 0) {
+  if (react.changes + ins.changes === 0) {
     // 同一使用者同一梯次已有通行證（兩筆訂單都付款）：保留付款紀錄並標記，需人工退款
     await db.updateTable('orders').set({ note: 'duplicate_pass', updated_at: ts }).where('id', '=', order.id).execute();
-    console.error(`[payuni] order ${order.id} paid but user already holds a pass for ${order.sitting_id}; manual refund needed`);
+    console.error(`[payment] order ${order.id} paid but user already holds a pass for ${order.sitting_id}; manual refund needed`);
   }
-  return { ok: true, outcome: 'paid', orderId: order.id, alreadyPaid: false, passCreated: ins.changes > 0 };
+  return { ok: true, outcome: 'paid', orderId: order.id, alreadyPaid: false, passCreated: react.changes + ins.changes > 0 };
 }
 
 export interface MeOrder {
@@ -150,6 +168,8 @@ export interface MeOrder {
 
 export interface MePass {
   id: string;
+  /** 目前持有這張通行證的訂單（退款後重買會改指向新訂單） */
+  orderId: string;
   sittingId: string;
   level: PassLevel;
   examDate: string;
@@ -174,7 +194,7 @@ export async function getMe(store: Store, user: Me['user'], now: Date): Promise<
   const orderRows = await store.db.selectFrom('orders').selectAll().where('user_id', '=', user.id).where('status', '!=', 'pending')
     .orderBy('created_at', 'desc').execute();
   const passes: MePass[] = passRows.map((p) => ({
-    id: p.id, sittingId: p.sitting_id, level: p.level, examDate: p.exam_date, validFrom: p.valid_from, validUntil: p.valid_until,
+    id: p.id, orderId: p.order_id, sittingId: p.sitting_id, level: p.level, examDate: p.exam_date, validFrom: p.valid_from, validUntil: p.valid_until,
     firstPaidFeatureUsedAt: p.first_paid_feature_used_at, revokedAt: p.revoked_at,
   }));
   const usedByOrder = new Map(passRows.map((p) => [p.order_id, p.first_paid_feature_used_at]));

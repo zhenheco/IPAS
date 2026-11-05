@@ -2,8 +2,8 @@
  * /api/* 路由。其他路徑交給靜態資源（env.ASSETS）。
  *
  * 安全：
- * - 會改變狀態的 API（PAYUNi 回傳除外）要求 Origin 與網站相同（CSRF 防護；session cookie 為 SameSite=Lax）。
- * - PAYUNi 回傳以 HashInfo 驗章 + AES-GCM 解密驗證，不依賴 cookie。
+ * - 會改變狀態的 API（affiliate webhook 除外）要求 Origin 與網站相同（CSRF 防護；session cookie 為 SameSite=Lax）。
+ * - 收款經 affiliate 金流微服務；webhook 以 X-Webhook-Signature（HMAC-SHA256 原始 body）驗章，不依賴 cookie。
  */
 import { Hono, type Context } from 'hono';
 import { z } from 'zod';
@@ -12,7 +12,8 @@ import { d1Store, type Store } from './db';
 import { emailSenderFromEnv, type EmailSender } from './email';
 import type { Env } from './env';
 import { createOrder, fulfilPayment, getMe, listOffers, markRefunded, recordPaidFeatureUse, requestRefund } from './orders';
-import { buildCheckout, checkoutHtml, verifyPayuniForm, type PayuniConfig } from './payuni';
+import { checkoutHtml, paymentClient } from './payment';
+import { PaymentGatewayError } from './payment/gateway-client';
 import { parseSyncBody, syncUser, loadSync } from './sync';
 
 /** 開始作答即視為「已使用付費功能」的功能；須與 src/lib/entitlement.ts 的 countsAsPaidUse 一致（測試會比對） */
@@ -28,11 +29,6 @@ type HonoEnv = { Bindings: Env; Variables: { ctx: Ctx } };
 type C = Context<HonoEnv>;
 
 const MAX_SYNC_BYTES = 10 * 1024 * 1024;
-
-export function payuniConfig(env: Env): PayuniConfig | null {
-  if (!env.PAYUNI_MER_ID || !env.PAYUNI_HASH_KEY || !env.PAYUNI_HASH_IV) return null;
-  return { merId: env.PAYUNI_MER_ID, hashKey: env.PAYUNI_HASH_KEY, hashIV: env.PAYUNI_HASH_IV, env: env.PAYUNI_ENV === 'production' ? 'production' : 'sandbox' };
-}
 
 const checkoutSchema = z.object({ sittingId: z.string().min(1).max(100), consent: z.literal(true) });
 const refundSchema = z.object({ orderId: z.string().min(1).max(100), reason: z.string().max(500).optional() });
@@ -84,8 +80,8 @@ export function createApp(deps: AppDeps = {}) {
     const fail = (error: string, status: 400 | 401 | 403 | 409 | 503) =>
       form ? c.redirect(`/pricing/?error=${encodeURIComponent(error)}`, 303) : c.json({ error }, status);
     if (!sameOrigin(c)) return fail('bad_origin', 403);
-    const cfg = payuniConfig(c.env);
-    if (!cfg) return fail('payment_unavailable', 503);
+    const client = paymentClient(c.env);
+    if (!client) return fail('payment_unavailable', 503);
     const u = await currentUser(c);
     if (!u) return form ? c.redirect('/login/?next=/pricing/', 303) : c.json({ error: 'unauthenticated' }, 401);
     let body: Record<string, unknown>;
@@ -95,40 +91,39 @@ export function createApp(deps: AppDeps = {}) {
     const t = now();
     const r = await createOrder(c.var.ctx.store, { userId: u.id, sittingId: parsed.data.sittingId, now: t });
     if (!r.ok) return fail(r.error, r.error === 'already_owned' ? 409 : 400);
-    const base = origin(c);
-    const checkout = await buildCheckout(cfg, { merTradeNo: r.order.merchantTradeNo, amount: r.order.amount, prodDesc: r.order.prodDesc, email: u.email },
-      { returnUrl: `${base}/api/payuni/return`, notifyUrl: `${base}/api/payuni/notify`, backUrl: `${base}/pricing/` }, t);
+    let checkout;
+    try {
+      // 經 affiliate 建立 TWD 一次性付款（無 periodParams → PAYUNi UPP）；orderId 用本站 merchant_trade_no，webhook 以此對回訂單
+      checkout = (await client.createPayment({
+        orderId: r.order.merchantTradeNo, amount: r.order.amount, currency: 'TWD', description: r.order.prodDesc,
+        email: u.email, buyerCountry: 'TW', buyerType: 'individual',
+      })).payuniForm;
+    } catch (e) { console.error(`[payment] createPayment ${r.order.merchantTradeNo}: ${e instanceof Error ? e.message : e}`); }
+    if (!checkout) return fail('payment_unavailable', 503);
     if (form) return c.html(checkoutHtml(checkout));
     return c.json({ orderId: r.order.id, amount: r.order.amount, priceType: r.order.priceType, checkout });
   });
 
-  async function handlePayuni(c: C) {
-    const cfg = payuniConfig(c.env);
-    if (!cfg) return { status: 503 as const, error: 'payment_unavailable' };
-    let form: Record<string, string>;
-    try {
-      const b = await c.req.parseBody();
-      form = Object.fromEntries(Object.entries(b).filter(([, v]) => typeof v === 'string')) as Record<string, string>;
-    } catch { return { status: 400 as const, error: 'bad_request' }; }
-    const v = await verifyPayuniForm(cfg, form);
-    if (!v.ok) { console.error(`[payuni] verification failed: ${v.error}`); return { status: 400 as const, error: v.error }; }
-    const r = await fulfilPayment(c.var.ctx.store, v.result, now());
-    if (!r.ok) { console.error(`[payuni] ${v.result.merTradeNo}: ${r.error}`); return { status: 400 as const, error: r.error }; }
-    return { status: 200 as const, result: r };
-  }
-
-  // NotifyURL：PAYUNi 伺服器對伺服器通知。
-  // 待確認（官方文件未載明）：NotifyURL 應回應的內容（目前回 200 + "SUCCESS"）與失敗時的重送機制；需 sandbox 實測或詢問 service@payuni.com.tw。
-  app.post('/api/payuni/notify', async (c) => {
-    const r = await handlePayuni(c);
-    return r.status === 200 ? c.text('SUCCESS') : c.text(r.error, r.status);
-  });
-
-  // ReturnURL：付款完成後使用者瀏覽器被帶回（跨站 POST，不帶 cookie）。也會處理入帳（冪等），以免 Notify 延遲。
-  app.post('/api/payuni/return', async (c) => {
-    const r = await handlePayuni(c);
-    const payment = r.status === 200 ? r.result.outcome : 'error';
-    return c.redirect(`/account/?payment=${payment}`, 303);
+  // affiliate → 本站 webhook（此路徑已登記於 affiliate）。付款成功／失敗的唯一入帳來源；回非 2xx 時 affiliate 會重試。
+  app.post('/api/payment/affiliate/webhook', async (c) => {
+    const client = paymentClient(c.env);
+    if (!client) return c.json({ error: 'payment_unavailable' }, 503);
+    let ev;
+    try { ev = await client.parseWebhookEvent(await c.req.text(), c.req.header('x-webhook-signature') ?? null); }
+    catch (e) {
+      if (!(e instanceof PaymentGatewayError)) throw e;
+      return c.json({ error: 'invalid_signature' }, 401);
+    }
+    // 只處理一次性 TWD 付款結果；續期／退款／訂閱等其他事件與非終態（PENDING）一律忽略（200，避免重送）
+    if (ev.type || (ev.currency && ev.currency !== 'TWD') || (ev.status !== 'SUCCESS' && ev.status !== 'FAILED')) return c.json({ ok: true, ignored: true });
+    const r = await fulfilPayment(c.var.ctx.store, {
+      orderId: ev.orderId, status: ev.status, amount: Number(ev.amount), tradeNo: ev.tradeNo ?? '',
+      raw: JSON.stringify({ paymentId: ev.paymentId, status: ev.status, amount: ev.amount, tradeNo: ev.tradeNo, paymentType: ev.paymentType, paidAt: ev.paidAt, errorMessage: ev.errorMessage }),
+    }, now());
+    // 已退款訂單不會因重送而成功，回 200 以停止重試（仍不開通）；其餘錯誤回 400 讓 affiliate 重送並留下紀錄
+    if (!r.ok && r.error === 'order_refunded') { console.error(`[payment] ${ev.orderId}: success event for refunded order ignored`); return c.json({ ok: true, ignored: true }); }
+    if (!r.ok) { console.error(`[payment] ${ev.orderId}: ${r.error}`); return c.json({ error: r.error }, 400); }
+    return c.json({ ok: true, outcome: r.outcome });
   });
 
   app.post('/api/refund-request', async (c) => {

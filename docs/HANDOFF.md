@@ -7,7 +7,7 @@
 - **初級題庫 504 題**：`data/questions/subject-11.json`（科目1 L11，252 題）、`subject-12.json`（科目2 L12，252 題），全數經過逐題審查。
 - **模擬試卷 19 回**：`data/papers.json`（初級 5+5、中級 5+4），在「單科模考 → 試卷」選擇。新增題目後跑 `npm run papers`，只會追加新回，不動舊卷。
 - **初級／中級切換**：首頁、練習、單科模考、全真模考、讀書計畫都有級別分頁。
-- **帳號與收費**：Better Auth 登入（Google、magic link）、D1 帳號同步、考期通行證、PAYUNi 結帳、廣告、升級提醒。**預設全部關閉**，目前網站行為與之前相同。
+- **帳號與收費**：Better Auth 登入（Google、magic link）、D1 帳號同步、考期通行證、PAYUNi 結帳（經 affiliate 金流微服務）、廣告、升級提醒。**預設全部關閉**，目前網站行為與之前相同。
 
 ## 先做（不需要外部帳號）
 
@@ -74,8 +74,13 @@ ADR 0003 目前是 `proposed`，請確認後改成 `accepted`：
 3. [ ] **秘密**：`BETTER_AUTH_SECRET`（`openssl rand -base64 32`）。清單見 `.dev.vars.example`，用 `npx wrangler secret put <NAME> -c wrangler.app.jsonc` 設定。
 4. [ ] **Google OAuth**：重新導向 URI `https://ipas.zhenhe-co.com/api/auth/callback/google`，並發布 OAuth 同意畫面。
 5. [ ] **Email**：改走 zhenheco 中央 cf-email（`wrangler.app.jsonc` 已有 `CF_EMAIL` service binding，寄件網域 `zhenhe-co.com` 已驗證）。用 cf-mail repo 的 create-api-key script 建 key，存 1Password `op://Dev/CF_EMAIL_API_KEY_IPAS/credential`，再 `printf "%s" "$KEY" | npx wrangler secret put CF_EMAIL_API_KEY -c wrangler.app.jsonc`。部署後寄一封 magic link，從 `npx wrangler tail -c wrangler.app.jsonc` 取得 `[email:cf-email] id=<id> status=<status>` 的 id，再呼叫 cf-email 的 `GET /status/:id` 確認投遞；這需要另一把 scope 為 `status:read` 的 cf-email key（不是寄信用的 `CF_EMAIL_API_KEY`）。
-6. [ ] **PAYUNi sandbox**：取得測試商店 MerID／HashKey／HashIV，實際走一次 購買 → 付款成功 → `/account/` 顯示付費會員；也測付款失敗與重複通知。
-7. [ ] **核對 PAYUNi**：官方文件已於 2026-11-04 核對（`docs/research/payuni-upp-verification.md`），Version 已改 2.0、付款結果判斷已修正、已送 `TradeInvoice=1`。只剩一項需確認：**Notify 要回什麼字串、失敗如何重送**（目前回 `SUCCESS`；官方文件沒寫，需 sandbox 實測或來信 service@payuni.com.tw）。同時在 sandbox 確認 Version 2.0 與 `TradeInvoice=1` 實際可用。
+6. [ ] **金流（經 affiliate，本站不直接呼叫 PAYUNi）**：把 1Password 項目 `zhenheco-payment-IPAS-prod`（vault `Dev`）的兩個欄位設成 Worker 秘密：
+   ```bash
+   op read "op://Dev/zhenheco-payment-IPAS-prod/PAYMENT_API_KEY" | tr -d '\n' | npx wrangler secret put PAYMENT_API_KEY -c wrangler.app.jsonc
+   op read "op://Dev/zhenheco-payment-IPAS-prod/PAYMENT_WEBHOOK_SECRET" | tr -d '\n' | npx wrangler secret put PAYMENT_WEBHOOK_SECRET -c wrangler.app.jsonc
+   ```
+   `PAYMENT_API_BASE`（`https://affiliate.1wayseo.com`）與 `PAYMENT_SITE_CODE`（`IPAS`）已在 `wrangler.app.jsonc` vars。實際走一次 購買 → PAYUNi 付款 → webhook 入帳 → `/account/` 顯示付費會員；也測付款失敗與重送 webhook。
+7. [ ] **確認 affiliate 端設定**（不在本 repo）：站台 `IPAS` 已啟用 `payuni_onetime_enabled`；`callbackUrl` = `https://ipas.zhenhe-co.com/account/`；webhook 網址 = `https://ipas.zhenhe-co.com/api/payment/affiliate/webhook`，secret 與 1Password 一致。若 Worker 上殘留舊的 `PAYUNI_MER_ID`／`PAYUNI_HASH_KEY`／`PAYUNI_HASH_IV` 秘密，用 `npx wrangler secret delete <NAME> -c wrangler.app.jsonc` 刪除。
 8. [ ] **統一發票**：PAYUNi 後台啟用自動開立（振禾有限公司，統編 83446730）。
 9. [x] **服務條款／退款政策／隱私權政策頁**：已建立 `/terms/`、`/refund/`（最後更新 2026-11-05）與 `/privacy/`（生效 2026-11-05，含 AdSense cookie 揭露），頁尾、價目頁、付費牆都有連結，結帳勾選框已改為同意服務條款與退款政策。上線前請自行確認內容（尤其是帳號資料刪除、準據法、非官方網站的說法）。
 10. [ ] **切換部署**：
@@ -83,8 +88,8 @@ ADR 0003 目前是 `proposed`，請確認後改成 `accepted`：
     npm run deploy:app
     ```
     要回到純靜態版：`npm run deploy`。兩者都會在建置後執行 `npm run check:dist`，dist 含官方題或 `-V<n>` 變體題就中止（ADR 0004）；部署建置不會帶 `INCLUDE_OFFICIAL`。`INCLUDE_OFFICIAL=1` 只用於本機自用建置，不要部署。
-11. [ ] **正式收款**：換正式商店秘密、`PAYUNI_ENV=production`，小額實買一次並退款。
-12. [ ] 設定 `ADMIN_EMAILS` 秘密（倉庫為公開，不要寫進 `wrangler.app.jsonc`；`<擁有者管理員 Email>` 換成實際位址）：`printf "%s" "<擁有者管理員 Email>" | npx wrangler secret put ADMIN_EMAILS -c wrangler.app.jsonc`，確認退款標記流程（目前退款要先在 PAYUNi 後台手動退，再呼叫 `POST /api/admin/orders/:id/refunded`）。
+11. [ ] **正式收款**：確認 `PAYMENT_API_BASE` 為 production affiliate，小額實買一次並退款（退款與發票作廢皆為手動，見第 12 項）。
+12. [ ] 設定 `ADMIN_EMAILS` 秘密（倉庫為公開，不要寫進 `wrangler.app.jsonc`；`<擁有者管理員 Email>` 換成實際位址）：`printf "%s" "<擁有者管理員 Email>" | npx wrangler secret put ADMIN_EMAILS -c wrangler.app.jsonc`，確認退款標記流程。**退款全程手動**（affiliate 尚無 PAYUNi 退款 API，也不會送退款 webhook）：先在 PAYUNi 商店後台退款、手動作廢／折讓 PAYUNi 開立的發票，再呼叫 `POST /api/admin/orders/:id/refunded` 撤銷本站通行證。
 13. [ ] （選用）廣告：建置時加 `PUBLIC_ADSENSE_CLIENT=ca-pub-…`。
 
 ## 之後可以做

@@ -10,10 +10,13 @@ BETTER_AUTH_URL=http://localhost:8787
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 
-# PAYUNi 商店資訊（PAYUNi 商店後台 → 串接設定）
-PAYUNI_MER_ID=
-PAYUNI_HASH_KEY=
-PAYUNI_HASH_IV=
+# zhenheco affiliate 金流微服務（本站不直接呼叫 PAYUNi，也不持有 PAYUNi 金鑰）。
+# PAYMENT_API_KEY / PAYMENT_WEBHOOK_SECRET 正式環境取自 1Password「zhenheco-payment-IPAS-prod」（vault Dev），做法見 docs/payments.md。
+# PAYMENT_API_BASE / PAYMENT_SITE_CODE 正式環境已寫在 wrangler.app.jsonc vars；本機要連 sandbox 時在此覆寫。
+PAYMENT_API_KEY=
+PAYMENT_WEBHOOK_SECRET=
+PAYMENT_API_BASE=https://sandbox.affiliate.1wayseo.com
+PAYMENT_SITE_CODE=IPAS
 
 # cf-email 中繼的 API key（EMAIL_PROVIDER=cf-email 時需要；來源見 docs/payments.md「Email」）。
 # 本機開發可不填，設 EMAIL_PROVIDER=console 改印在終端機。

@@ -1,6 +1,6 @@
 # 會員、付費與帳號同步
 
-本文件說明登入、購買考期通行證、PAYUNi 金流、權益判斷、退款與帳號同步的實作。決策依據見 [ADR 0001](adr/0001-exam-pass-pricing.md)、[ADR 0002](adr/0002-d1-database.md)、[ADR 0003](adr/0003-beginner-level-pass.md)（提案中）。術語見 [GLOSSARY](../GLOSSARY.md)「會員與付費」。
+本文件說明登入、購買考期通行證、金流（經 zhenheco affiliate 金流微服務）、權益判斷、退款與帳號同步的實作。決策依據見 [ADR 0001](adr/0001-exam-pass-pricing.md)、[ADR 0002](adr/0002-d1-database.md)、[ADR 0003](adr/0003-beginner-level-pass.md)（提案中）。術語見 [GLOSSARY](../GLOSSARY.md)「會員與付費」。
 
 **目前狀態**：程式已完成但未啟用。正式站仍以 `wrangler.jsonc` 純靜態部署，前端 `PUBLIC_PAYWALL_ENABLED` 未設定，網站行為與自用版完全相同。
 
@@ -8,11 +8,11 @@
 
 ```
 瀏覽器 ──► Cloudflare Worker「ipas」（wrangler.app.jsonc）
-            ├─ /api/*  → worker/index.ts（Hono）
+            ├─ /api/*  → worker/index.ts（Hono）；/api/checkout ──► affiliate ──► PAYUNi UPP
             │            ├─ /api/auth/*        Better Auth（Google、magic link）
             │            ├─ /api/me、/api/pricing、/api/checkout、/api/refund-request
             │            ├─ /api/usage/paid-feature、/api/sync
-            │            ├─ /api/payuni/notify、/api/payuni/return   ◄── PAYUNi
+            │            ├─ /api/payment/affiliate/webhook   ◄── affiliate 金流微服務（PAYUNi 結果）
             │            └─ /api/admin/orders/:id/refunded
             │            └─ D1（binding DB，經 Kysely + kysely-d1）
             └─ 其他路徑 → 靜態資源（dist/，run_worker_first 只含 /api/*）
@@ -27,7 +27,9 @@
 | `src/pages/{account,pricing,login}.astro` | 新頁面 |
 | `worker/app.ts` | 路由、輸入驗證（zod）、Origin 檢查 |
 | `worker/orders.ts` | 建立訂單、入帳（冪等）、`/api/me`、退款申請、標記退款、付費功能使用紀錄 |
-| `worker/payuni.ts` | PAYUNi UPP 表單、AES-256-GCM 加解密、HashInfo、回傳驗證 |
+| `worker/payment/gateway-client.ts` | affiliate 的 `src/lib/sdk/payment-gateway-client.ts` **原檔**（勿修改；更新時整檔覆蓋）：`createPayment`、`parseWebhookEvent`（HMAC 驗章） |
+| `worker/payment/index.ts` | 由 `PAYMENT_*` 組態建立 SDK client（缺任一項回 null → 503）、自動送出的 PAYUNi 表單 HTML |
+| `src/lib/paymentReturn.ts` | `/account/?status=…` 的提示文字（純函式；不信任網址，只有網址的 `orderId` 對應到已付款訂單、且該訂單名下有未撤銷通行證才說「已開通」） |
 | `worker/sync.ts` | 帳號同步的合併規則與讀寫 |
 | `worker/auth.ts`、`worker/email.ts` | Better Auth 設定；寄信介面（cf-email 中繼或 console） |
 | `worker/db/` | Kysely 型別與 `Store`（`atomic()` = D1 batch） |
@@ -39,11 +41,11 @@
 
 - **Better Auth**：`"user"`、`"session"`、`"account"`、`"verification"`（欄位沿用 Better Auth 預設 camelCase；magic link 使用 `verification`）。
 - **`exam_sittings`**（梯次）：`id`、`level`（beginner/intermediate）、`exam_date`（YYYY-MM-DD 台灣日期）、`name`、`sale_open`。新梯次請新增 migration（見下方）。
-- **`orders`**：`merchant_trade_no`（送 PAYUNi 的 MerTradeNo，唯一）、`user_id`、`sitting_id`、`level`、`price_type`（early/regular/renewal）、`amount_twd`、`status`（pending/paid/failed/refunded）、`payuni_trade_no`、`consent_at`（同意「數位內容立即提供、不適用 7 天鑑賞期」的時間）、`paid_at`、`refund_requested_at`、`refund_reason`、`refunded_at`、`last_notify`（最近一次解密後回傳，供對帳）、`note`。
+- **`orders`**：`merchant_trade_no`（站內訂單編號，唯一；即傳給 affiliate 的 `orderId`，webhook 以此對回訂單）、`user_id`、`sitting_id`、`level`、`price_type`（early/regular/renewal）、`amount_twd`、`status`（pending/paid/failed/refunded）、`payuni_trade_no`（webhook 的 `tradeNo`＝PAYUNi 交易序號；欄名沿用歷史名稱）、`consent_at`（同意「數位內容立即提供、不適用 7 天鑑賞期」的時間）、`paid_at`、`refund_requested_at`、`refund_reason`、`refunded_at`、`last_notify`（最近一次 webhook 的精簡 JSON：paymentId、status、amount、tradeNo、paymentType、paidAt、errorMessage，供對帳）、`note`。
 - **`passes`**（考期通行證）：`user_id`、`sitting_id`、`level`、`valid_from`（付款時間）、`valid_until`（考試日 + 30 天的台灣時間 23:59:59.999）、`order_id`（唯一）、`first_paid_feature_used_at`／`first_paid_feature`（退款資格用）、`revoked_at`（退款後撤銷）。`(user_id, sitting_id)` 唯一。
 - **`sync_sessions`**、**`sync_question_stats`**：對應 `AppState.sessions`（Session）與 `AppState.questionStats`（QuestionStat），主鍵 `(user_id, session_id)`／`(user_id, question_id)`。
 
-金額欄位以「整數新臺幣元」儲存：TWD 實務上沒有小數，PAYUNi `TradeAmt` 亦為整數元；此即「金額用整數、不用浮點數」的規則套用在 TWD 上。
+金額欄位以「整數新臺幣元」儲存：TWD 實務上沒有小數，affiliate／PAYUNi 的 TWD 金額亦須為整數元；此即「金額用整數、不用浮點數」的規則套用在 TWD 上。
 
 D1 不支援互動式交易，需要「全部成功或全部失敗」的寫入（入帳＋建立通行證、退款＋撤銷通行證、同步）一律經 `Store.atomic()`，以 D1 `batch()`（單一交易）執行；日後遷移 Postgres 時以 `db.transaction()` 實作同一介面。D1 單一查詢最多 100 個綁定參數，多列寫入以 `chunk()` 切塊。
 
@@ -72,14 +74,17 @@ D1 不支援互動式交易，需要「全部成功或全部失敗」的寫入�
 ### 購買 → 入帳 → 通行證
 
 1. `/pricing/` 呼叫 `GET /api/pricing`，列出尚未結束的梯次與目前使用者的價格。
-2. 使用者勾選同意「數位內容立即提供、不適用 7 天鑑賞期」，表單以一般 POST 送 `/api/checkout`（`sittingId`、`consent=on`）。Worker 檢查 Origin、登入、同意、梯次可購買、未持有該梯次 → 重新計價 → 建立 `pending` 訂單（記錄 `consent_at`）→ 回傳自動送出的 HTML 表單（`MerID`、`Version`、`EncryptInfo`、`HashInfo`）POST 到 PAYUNi UPP。以 JSON 呼叫則回傳 `{ orderId, amount, priceType, checkout: { action, fields } }`。
-3. 使用者在 PAYUNi 付款。
-4. **NotifyURL**（`/api/payuni/notify`，伺服器對伺服器）：驗證 HashInfo → 解密 → 內外層 MerID 必須是本商店 → 依 MerTradeNo 找訂單 → `TradeAmt` 必須等於訂單金額 → 判斷結果：
-   - 已付款：在同一個 batch 中「訂單 pending/failed → paid」並建立通行證；建立通行證的 SQL 以「訂單已由本次通知標記為 paid」為條件，重複或並行的通知不會重複建立，已退款的訂單也不會被補發。
-   - 失敗（TradeStatus 2／3 或明確錯誤的外層 Status）：pending → failed（之後同一訂單若成功仍可入帳）。
-   - 其他（TradeStatus 0／8、外層 Status 為 UNKNOWN／UNAPPROVED，例如 ATM／超商已取號未付款）：維持 pending。
+2. 使用者勾選同意「數位內容立即提供、不適用 7 天鑑賞期」，表單以一般 POST 送 `/api/checkout`（`sittingId`、`consent=on`）。Worker 檢查 Origin、登入、同意、梯次可購買、未持有該梯次 → 重新計價 → 建立 `pending` 訂單（記錄 `consent_at`）→ 以 SDK `createPayment` 向 affiliate 建立付款：`orderId` = 訂單的 `merchant_trade_no`、`amount`、`currency: 'TWD'`、`description`、`email`、`buyerCountry: 'TW'`、`buyerType: 'individual'`，**不帶** `periodParams`（TWD 無 `periodParams` ＝ PAYUNi UPP 一次性付款，需 affiliate 站台 `payuni_onetime_enabled`）。成功時回傳自動送出的 HTML 表單（affiliate 回的 `payuniForm`，`Version` 2.0）POST 到 PAYUNi UPP；以 JSON 呼叫則回傳 `{ orderId, amount, priceType, checkout: payuniForm }`。affiliate 失敗、未回表單或未設定 `PAYMENT_*` 時：表單回 303 `/pricing/?error=payment_unavailable`，JSON 回 503。
+3. 使用者在 PAYUNi 付款頁付款（載具／統編／捐贈碼由買方在 PAYUNi 頁面選擇，電子發票由 PAYUNi 商店後台設定的服務開立）。PAYUNi 的 Notify／Return 由 affiliate 接收與驗證，**本站不接觸 PAYUNi 的 HashKey／IV 或回呼**。
+4. **webhook**（`POST /api/payment/affiliate/webhook`，affiliate → 本站，已登記於 affiliate）：以原始 body 與 `X-Webhook-Signature`（HMAC-SHA256 hex，secret = `PAYMENT_WEBHOOK_SECRET`）經 SDK `parseWebhookEvent` 驗章，簽章缺少／錯誤／body 被改一律回 401（未設定 `PAYMENT_*` 回 503）；此路徑不檢查 Origin（伺服器對伺服器），簽章是唯一的閘門。通過後：
+   - `type` 有值（RECURRING／REFUND／訂閱類）、`currency` 不是 TWD、或 `status` 不是 `SUCCESS`／`FAILED`：忽略（200）。
+   - 依 `orderId` 找訂單（找不到回 400）→ `amount` 必須等於訂單金額（不符回 400；非 2xx 時 affiliate 會重送）。
+   - `SUCCESS`：在同一個 batch 中「訂單 pending/failed → paid」並建立通行證；建立通行證的 SQL 以「訂單已由本次通知標記為 paid」為條件，重送或並行的 webhook 不會重複建立。已退款的訂單收到 `SUCCESS` 不開通、回 200（重送也不會成功，避免無限重試）。
+   - 退款後重買同一梯次（結帳允許，因為已撤銷的通行證不算持有）：`UNIQUE(user_id, sitting_id)` 被舊的已撤銷通行證佔住，所以同一個 batch 內把那一列的 `order_id` 改指向新訂單、重新啟用（`revoked_at` 清空、有效期重算、首次使用付費功能的紀錄清空，新訂單的退款資格重新計算）。舊訂單仍是 `refunded` 且保留 `refunded_at`，退款歷史在 `orders`。`/account/` 的「已開通」提示要求該訂單名下有未撤銷的通行證。
+   - `FAILED`：pending → failed（之後同一訂單若 `SUCCESS` 仍可入帳；已 paid 不會被降級）。
+   - ATM／超商取號未付款時 affiliate **不會**送 webhook，訂單維持 pending。
    - 同一使用者同一梯次已有通行證（兩筆訂單都付款）：訂單標記 `note = duplicate_pass`，需人工退款。
-5. **ReturnURL**（`/api/payuni/return`）：瀏覽器被帶回時做相同的驗證與冪等入帳（避免 Notify 延遲），再 303 導向 `/account/?payment=paid|pending|failed|error`。
+5. **瀏覽器返回**：affiliate 會 303 導回站台的 `callbackUrl`（`https://ipas.zhenhe-co.com/account/`，於 affiliate 設定），query 帶 `paymentId`、`orderId`、`status=success|failed|pending`。`/account/` 只顯示提示，**權益只來自 webhook**：`success` 時，須該 `orderId` 的訂單已付款且名下有未撤銷通行證才顯示「已開通」（持有其他梯次的通行證不算），否則顯示「確認中，請稍後重新整理」（`src/lib/paymentReturn.ts`）。
 6. 統一發票：由 PAYUNi 商店後台設定自動開立（振禾有限公司，統編 83446730），本系統不另外處理。
 
 ### 權益判斷（前端）
@@ -95,7 +100,7 @@ D1 不支援互動式交易，需要「全部成功或全部失敗」的寫入�
 1. 資格（`refundEligibility`）：訂單已付款、付款後 7×24 小時內、該通行證 `first_paid_feature_used_at` 為空、尚未申請過。
 2. 只有「開始」單科模考／全真模考／錯題重做的作答時，前端才呼叫 `reportPaidFeatureUse(level, feature)`（`beginSession`）→ `POST /api/usage/paid-feature`，記錄該級別有效通行證的首次使用時間（只記第一次）。開啟錯題本、弱點分析、讀書計畫（`<Paywall>` 顯示內容）不回報；Worker 的 `PAID_USE_FEATURES` 僅接受 `exam`／`full`／`redo`，其餘功能名稱回 400，前端無法藉此結束退款資格；「無廣告」不算使用。
 3. 使用者在 `/account/` 按「申請退款」→ `POST /api/refund-request`，訂單記錄 `refund_requested_at`、`refund_reason`。
-4. 擁有者在 PAYUNi 後台退款後，以 `ADMIN_EMAILS` 中的帳號（email 需已驗證）呼叫 `POST /api/admin/orders/:id/refunded`（同一 batch：訂單 → refunded、通行證 → revoked）。例如在已登入的 `/account/` 頁面於瀏覽器 console 執行：
+4. **退款目前全程手動**（affiliate 尚無 PAYUNi 退款 API；其 `refundPayment` 只在 affiliate 內標記 `REFUNDED`，不會向 PAYUNi 退款，也**不會**送退款 webhook 給本站）：擁有者須 (a) 在 PAYUNi 商店後台手動退款（信用卡一次付清：收款後 180 天內），(b) 手動作廢／折讓 PAYUNi 開立的電子發票，(c) 再以 `ADMIN_EMAILS` 中的帳號（email 需已驗證）呼叫 `ADMIN_EMAILS` 中的帳號（email 需已驗證）`POST /api/admin/orders/:id/refunded`（同一 batch：訂單 → refunded、通行證 → revoked；此路由保留，是本站撤銷權益的唯一方式）。例如在已登入的 `/account/` 頁面於瀏覽器 console 執行：
    ```js
    fetch('/api/admin/orders/<訂單 id>/refunded', { method: 'POST' }).then((r) => r.json())
    ```
@@ -113,13 +118,22 @@ D1 不支援互動式交易，需要「全部成功或全部失敗」的寫入�
 
 ## 環境變數與秘密
 
-`vars`（`wrangler.app.jsonc`）：`BETTER_AUTH_URL`（網站網址）、`PAYUNI_ENV`（sandbox/production）、`EMAIL_PROVIDER`、`EMAIL_FROM`。
+`vars`（`wrangler.app.jsonc`）：`BETTER_AUTH_URL`（網站網址）、`PAYMENT_API_BASE`（`https://affiliate.1wayseo.com`；sandbox 為 `https://sandbox.affiliate.1wayseo.com`）、`PAYMENT_SITE_CODE`（`IPAS`）、`EMAIL_PROVIDER`、`EMAIL_FROM`。
 
-秘密（`npx wrangler secret put <NAME> -c wrangler.app.jsonc`，本機放 `.dev.vars`，範本 `.dev.vars.example`）：`BETTER_AUTH_SECRET`、`GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`、`PAYUNI_MER_ID`、`PAYUNI_HASH_KEY`、`PAYUNI_HASH_IV`、`CF_EMAIL_API_KEY`、`ADMIN_EMAILS`（擁有者 Email，逗號分隔；倉庫為公開，不可寫進 `vars`，且同名 var 與 secret 會衝突）。
+秘密（`npx wrangler secret put <NAME> -c wrangler.app.jsonc`，本機放 `.dev.vars`，範本 `.dev.vars.example`）：`BETTER_AUTH_SECRET`、`GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`、`PAYMENT_API_KEY`、`PAYMENT_WEBHOOK_SECRET`、`CF_EMAIL_API_KEY`、`ADMIN_EMAILS`（擁有者 Email，逗號分隔；倉庫為公開，不可寫進 `vars`，且同名 var 與 secret 會衝突）。
 
 前端建置時變數（Astro `PUBLIC_*`）：`PUBLIC_PAYWALL_ENABLED=1` 啟用付費機制；`PUBLIC_ADSENSE_CLIENT=ca-pub-…` 啟用廣告。
 
-未設定 PAYUNi 秘密時 `/api/checkout` 回 503，其餘 API 正常。
+未設定 `PAYMENT_*` 時 `/api/checkout` 與 webhook 回 503，其餘 API 正常。
+
+`PAYMENT_API_KEY`、`PAYMENT_WEBHOOK_SECRET` 存在 1Password 項目 `zhenheco-payment-IPAS-prod`（vault `Dev`，欄位同名）。設定 Worker 秘密（以管線傳值，不經 echo、不落地、不進 shell history）：
+
+```sh
+op read "op://Dev/zhenheco-payment-IPAS-prod/PAYMENT_API_KEY" | tr -d '\n' | npx wrangler secret put PAYMENT_API_KEY -c wrangler.app.jsonc
+op read "op://Dev/zhenheco-payment-IPAS-prod/PAYMENT_WEBHOOK_SECRET" | tr -d '\n' | npx wrangler secret put PAYMENT_WEBHOOK_SECRET -c wrangler.app.jsonc
+```
+
+本站不再持有 `PAYUNI_*`；若 Worker 上殘留舊的 `PAYUNI_MER_ID`／`PAYUNI_HASH_KEY`／`PAYUNI_HASH_IV` 秘密，上線後以 `npx wrangler secret delete <NAME> -c wrangler.app.jsonc` 刪除。
 
 ## 開發與測試
 
@@ -152,39 +166,26 @@ VALUES ('intermediate-2027-05-22', 'intermediate', '2027-05-22', '2027 年 5 月
 2. **Better Auth**：`openssl rand -base64 32` 產生 `BETTER_AUTH_SECRET` 並設定。
 3. **Google OAuth**：Google Cloud Console 建立 OAuth 用戶端（網頁應用程式），授權的重新導向 URI：`https://ipas.zhenhe-co.com/api/auth/callback/google`，JavaScript 來源：`https://ipas.zhenhe-co.com`；設定 `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`。OAuth 同意畫面需發布（否則只有測試使用者能登入）。
 4. **Email**：走 cf-email 中繼，`zhenhe-co.com` 已是中繼的已驗證寄件網域，`EMAIL_FROM` 用純位址 `no-reply@zhenhe-co.com`。用 cf-mail repo 的 create-api-key script 建立 key，存進 1Password `op://Dev/CF_EMAIL_API_KEY_IPAS/credential`，再設定秘密：`op read op://Dev/CF_EMAIL_API_KEY_IPAS/credential | tr -d '\n' | npx wrangler secret put CF_EMAIL_API_KEY -c wrangler.app.jsonc`（等同 `printf "%s" "$KEY" | wrangler secret put ...`）。`wrangler.app.jsonc` 已含 `services` 綁定 `CF_EMAIL` → `cf-email`。部署後用 magic link 寄一封，再查投遞：每次寄出 Worker 會印一行 `[email:cf-email] id=<id> status=<status>`（`npx wrangler tail -c wrangler.app.jsonc` 查看）；用該 id 呼叫 cf-email 的 `GET /status/:id`。`/status` 需要另一把 scope 為 `status:read` 的 cf-email key（不是寄信用的 `CF_EMAIL_API_KEY`），不要把它設進這個 Worker。
-5. **PAYUNi sandbox**：
-   - 取得測試商店的 MerID／HashKey／HashIV，`PAYUNI_ENV=sandbox`。
-   - 商店後台設定 NotifyURL／ReturnURL 允許的網址（若後台有此設定）：`https://ipas.zhenhe-co.com/api/payuni/notify`、`/api/payuni/return`。
-   - 實際走一次：購買 → 付款成功 → 確認 Worker log 無驗證錯誤、訂單 paid、通行證建立、`/account/` 顯示付費會員。
-   - 測試付款失敗、重複通知（PAYUNi 後台若可重送）、ReturnURL 導回。
-   - 核對下方「PAYUNi 官方文件核對結果」：官方文件已確認大部分項目，只剩第 7 項（Notify 回應與重送）及 Version 2.0／`TradeInvoice` 需在 sandbox 實測。
+5. **affiliate 金流（sandbox）**：
+   - 確認 affiliate 已為站台 `IPAS` 啟用 `payuni_onetime_enabled`、`callbackUrl` 設為 `https://ipas.zhenhe-co.com/account/`、webhook 網址為 `https://ipas.zhenhe-co.com/api/payment/affiliate/webhook`、`PAYMENT_WEBHOOK_SECRET` 與 1Password 一致。
+   - 設定 `PAYMENT_API_KEY`、`PAYMENT_WEBHOOK_SECRET` 秘密（見上）。本機或 sandbox 驗證時，把 `PAYMENT_API_BASE` 暫時改為 `https://sandbox.affiliate.1wayseo.com`（`.dev.vars` 覆寫）。
+   - 實際走一次：購買 → 導向 PAYUNi 付款 → 付款成功 → 確認 Worker log 無 `[payment]` 錯誤、訂單 paid、通行證建立、`/account/` 顯示付費會員。
+   - 測試付款失敗（訂單 failed）、重送 webhook（不重複建立通行證）、瀏覽器返回頁在 webhook 尚未到達時顯示「確認中」。
    - 確認 PAYUNi 後台已啟用自動開立統一發票（振禾有限公司，統編 83446730）。
 6. **切換部署**：`npm run deploy:app`（即 `PUBLIC_PAYWALL_ENABLED=1 astro build`、`npm run check:dist`、`wrangler deploy -c wrangler.app.jsonc`；Worker 名稱同為 `ipas`，路由相同，會取代純靜態版本；回退時改用 `npm run deploy`（`wrangler.jsonc`，未設旗標的建置）即可）。
-7. **正式收款**：換成正式商店秘密、`PAYUNI_ENV=production`，以小額實際購買並退款一次。
+7. **正式收款**：`PAYMENT_API_BASE` 指向 production affiliate（`https://affiliate.1wayseo.com`），以小額實際購買並退款一次（退款與發票作廢皆為手動，見「退款」）。
 8. 設定 `ADMIN_EMAILS` 秘密（`printf "%s" "<擁有者管理員 Email>" | npx wrangler secret put ADMIN_EMAILS -c wrangler.app.jsonc`），確認退款標記流程。
 9. 退款、鑑賞期同意與付費功能說明已寫入服務條款／退款政策頁（`src/pages/terms.astro`、`src/pages/refund.astro`），資料蒐集、cookie 與 AdSense 揭露在隱私權政策頁（`src/pages/privacy.astro`）；調整退款規則或價格時需同步檢查這些頁面與結帳勾選文字（`src/components/Pricing.tsx`）。
 
-## PAYUNi 官方文件核對結果（2026-11-04）
+## 已移除的 PAYUNi 直連
 
-逐項依據見 [docs/research/payuni-upp-verification.md](research/payuni-upp-verification.md)。以下**全部尚未經 sandbox 實測**。
+本站原本直接串接 PAYUNi UPP（`worker/payuni.ts`、`/api/payuni/notify`、`/api/payuni/return`、`PAYUNI_*` 設定）。依擁有者規則「網站不直接呼叫 PAYUNi、不持有 PAYUNi HashKey／IV，商家回呼歸 affiliate」，這些已全數移除，改由 affiliate 擁有 PAYUNi 端（UPP 表單、加解密、Notify／Return 驗證、Version 2.0、發票設定）。當時對 PAYUNi 官方文件的逐項核對留在 [docs/research/payuni-upp-verification.md](research/payuni-upp-verification.md)（歷史紀錄，與本站程式已無關）。
 
-已對照官方文件／官方 PHP SDK 確認：
+目前仍需注意：
 
-1. UPP 端點（sandbox／production）；`Version` 已改為官方固定的 **2.0**（1.0 仍可用，但電子發票功能不支援舊版）。
-2. 加解密（AES-256-GCM、`bin2hex(密文:::base64(tag))`、HashInfo = `strtoupper(sha256(HashKey + EncryptInfo + HashIV))`）；HashKey 32／HashIV 16 字元僅見於官方範例，實際值以 sandbox 取得的為準。測試向量在 `worker/payuni.test.ts`。
-3. UPP 參數：必填 `MerID`、`MerTradeNo`、`TradeAmt`、`Timestamp`、`ProdDesc`（最長 550）；`ReturnURL`／`NotifyURL`／`BackURL`／`UsrMail` 條件式；NotifyURL 僅支援 80／443 埠；未指定付款方式時依商店後台預設。
-4. `MerTradeNo` 最長 25 字元、`[A-Za-z0-9_-]`、10 分鐘內不可重複（本站產生 20 字元英數）。
-5. Notify 以 Form Post 回傳 `Status`、`MerID`、`Version`、`EncryptInfo`、`HashInfo`；解密後有 `MerTradeNo`、`TradeNo`、`TradeAmt`、`TradeStatus` 等。
-6. 付款結果：`TradeStatus` 0 取號成功、1 已付款、2 付款失敗、3 付款取消、8 訂單待確認。`paymentOutcome` 規則：TradeStatus 2／3 → 失敗；外層 `Status` 為 `UNKNOWN`（等待授權結果逾期／系統忙碌）或 `UNAPPROVED`（不分大小寫）→ 待付款，不入帳；`SUCCESS` + TradeStatus 1 → 已付款；`SUCCESS` + 0／8 → 待付款；其他 Status → 失敗。
-7. （不在此列，見下）
-8. ReturnURL 為前景通知（Form Post），格式與 Notify 相同（依官方 SDK 推得）；以 NotifyURL 為準。本站兩者都驗證並冪等入帳。
-9. 退款 API 存在但**未串接**：信用卡 `POST /api/trade/close`（`CloseType=2`，180 天內）；ATM／超商 `/api/trade/offline/refund` 需申請核准。目前維持擁有者在 PAYUNi 後台手動退款。
-10. 統一發票：`buildCheckout` 送 `TradeInvoice=1`；發票仍依 PAYUNi 後台電子發票設定開立，後台必須先完成設定。
-
-**仍待確認：**
-
-- **第 7 項**：NotifyURL 應回應的內容與失敗重送規則，官方文件沒有載明（只有「交易結果請以 NotifyURL 為主」與「15 分鐘後可查詢交易」）。目前回 HTTP 200 + `SUCCESS`（第三方 SDK 範例為 `1|OK`）。需 sandbox 實測，或來信 service@payuni.com.tw 詢問。
-- sandbox 實測 Version 2.0 與 `TradeInvoice=1` 是否如預期（請求被接受、發票開立）。
+- affiliate 的付款成功／失敗 webhook 才是入帳依據；取號未付款（ATM／超商）不會送 webhook。
+- 退款沒有 API，也沒有退款 webhook（見「退款」）。
+- 本站只驗證 affiliate 的 HMAC 簽章，不再驗證 PAYUNi 的 MerID。webhook 載荷中本站實際使用的欄位：`orderId`、`status`、`amount`、`tradeNo`、`paymentId`、`paymentType`、`paidAt`、`errorMessage`、`type`、`currency`（依 affiliate README「PAYUNi 一次性付款 webhook」）。
 
 ## 其他推論（非 PAYUNi）
 

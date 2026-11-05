@@ -5,7 +5,7 @@ import type { Env } from '../env';
 import { migratedD1 } from './fake-d1';
 
 export const ORIGIN = 'https://ipas.test';
-export const PAYUNI = { PAYUNI_MER_ID: 'S01234567', PAYUNI_HASH_KEY: '12345678901234567890123456789012', PAYUNI_HASH_IV: 'abcdefghijklmnop' };
+export const PAYMENT = { PAYMENT_API_KEY: 'test-api-key', PAYMENT_WEBHOOK_SECRET: 'test-webhook-secret', PAYMENT_API_BASE: 'https://affiliate.test', PAYMENT_SITE_CODE: 'IPAS' };
 
 export function harness(opts: { now?: Date; env?: Partial<Env> } = {}) {
   const db = migratedD1();
@@ -14,7 +14,7 @@ export function harness(opts: { now?: Date; env?: Partial<Env> } = {}) {
   const env = {
     DB: db.d1, ASSETS: { fetch: async () => new Response('static asset') },
     BETTER_AUTH_URL: ORIGIN, BETTER_AUTH_SECRET: 'test-secret-test-secret-test-secret-123',
-    PAYUNI_ENV: 'sandbox', ...PAYUNI, EMAIL_PROVIDER: 'console', ...opts.env,
+    ...PAYMENT, EMAIL_PROVIDER: 'console', ...opts.env,
   } as unknown as Env;
   const app = createApp({ now: () => clock.now, mailer: () => mailer });
   const fetchApp = (path: string, init: RequestInit = {}) => app.fetch(new Request(`${ORIGIN}${path}`, init), env);

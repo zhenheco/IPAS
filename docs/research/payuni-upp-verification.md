@@ -1,5 +1,7 @@
 # PAYUNi UPP 串接核對紀錄
 
+> **歷史紀錄（2026-11-05）**：本站已不再直接串接 PAYUNi，以下提到的 `worker/payuni.ts` 等程式已移除，PAYUNi 端改由 affiliate 金流微服務負責（見 `docs/payments.md`）。保留僅供查證 PAYUNi 官方文件的核對結果。
+
 核對日期（as-of）：2026-11-04。對象：`worker/payuni.ts`、`worker/app.ts`、`worker/orders.ts`。
 
 來源：PAYUNi 官方 API 文件（ShowDoc，`docs.payuni.com.tw/server/index.php?s=/api/page/info&page_id=N`，以下簡稱 page N）與官方 PHP SDK（`github.com/payuni/PHP_SDK`）。本檔的核對結果由專案擁有者端的協調者在 2026-11-04 對照上述頁面後提供；撰寫本檔的 agent 沒有重新連線取得原文，page 編號與欄位細節請以官方文件為準。**以下全部尚未經 sandbox 實測。**
