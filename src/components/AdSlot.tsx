@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
+import { AD_UNITS, type AdUnit } from '../lib/adUnits';
 import { PAYWALL_ENABLED, shouldShowAds } from '../lib/entitlement';
 import type { PassLevel } from '../lib/pricing';
 import { useAccount } from './useAccount';
@@ -21,7 +22,7 @@ function loadScript(client: string) {
  * 廣告版位：只有 PUBLIC_PAYWALL_ENABLED=1、設定了 PUBLIC_ADSENSE_CLIENT、且使用者不是付費會員時才顯示。
  * 帳號狀態載入前不顯示，避免付費會員看到閃現的廣告。
  */
-export default function AdSlot({ slot, level }: { slot: string; level?: PassLevel }) {
+export default function AdSlot({ slot, level }: { slot: AdUnit; level?: PassLevel }) {
   const [account] = useAccount();
   const ref = useRef<HTMLModElement>(null);
   const ent = account?.status === 'signed-in' ? account.me.entitlements : null;
@@ -34,7 +35,7 @@ export default function AdSlot({ slot, level }: { slot: string; level?: PassLeve
   if (!show) return null;
   return (
     <aside class="adslot" aria-label="廣告" style="margin:16px 0;min-height:90px">
-      <ins ref={ref} class="adsbygoogle" style="display:block" data-ad-client={AD_CLIENT} data-ad-slot={slot} data-ad-format="auto" data-full-width-responsive="true" />
+      <ins ref={ref} class="adsbygoogle" style="display:block" data-ad-client={AD_CLIENT} data-ad-slot={AD_UNITS[slot]} data-ad-format="auto" data-full-width-responsive="true" />
     </aside>
   );
 }
