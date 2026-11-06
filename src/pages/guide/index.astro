@@ -1,0 +1,49 @@
+---
+import Base from '../../layouts/Base.astro';
+import { FACTS_CHECKED, GUIDES, SRC } from '../../lib/guides';
+import { breadcrumbJsonLd } from '../../lib/seo';
+
+const title = 'iPAS AI 應用規劃師考試指南：初級、中級、報名與準備';
+const description = 'iPAS AI 應用規劃師是什麼、初級與中級怎麼考、115 年度報名與考試日期、讀書計畫與考古題使用方法，依經濟部 iPAS 官方公告整理。';
+const ld = [breadcrumbJsonLd([['首頁', '/'], ['考試指南', '/guide/']])];
+---
+<Base title={title} description={description} image="/guide/img/hub.jpg" jsonLd={ld}>
+  <article class="guide">
+    <h1>{title}</h1>
+    <p class="muted">更新日期：<time datetime={FACTS_CHECKED}>{FACTS_CHECKED}</time></p>
+    <picture>
+      <source srcset="/guide/img/hub.webp" type="image/webp" />
+      <img class="hero" src="/guide/img/hub.jpg" alt="考生在筆電前查看 AI 圖表、旁邊放著證書與書本的插圖" width="1200" height="614" fetchpriority="high" />
+    </picture>
+
+    <h2>AI 應用規劃師是什麼？</h2>
+    <p>AI 應用規劃師是經濟部產業人才能力鑑定（iPAS）的一項鑑定，評量規劃與應用人工智慧的能力，分成初級與中級：</p>
+    <ul>
+      <li><b>初級</b>：考 L11 人工智慧基礎概論、L12 生成式 AI 應用與規劃，偏概念與工具應用，不考寫程式，證書永久有效。</li>
+      <li><b>中級</b>：必考 L21 人工智慧技術應用與規劃，再從 L22（數據分析）或 L23（機器學習）擇一，含程式題，證書效期 5 年。</li>
+    </ul>
+    <p>兩個級別都是單選題、電腦化測驗，每科 70 分及格。115 年度初級辦四梯、中級辦兩梯。</p>
+
+    <figure>
+      <img src="/guide/img/exam-structure.svg" alt="初級考 L11 與 L12；中級考 L21 加 L22 或 L23，分別取得數據分析或機器學習證書" width="960" height="520" loading="lazy" />
+      <figcaption>初級與中級的應考科目和證書（依 115 年度簡章）</figcaption>
+    </figure>
+
+    <h2>考試指南文章</h2>
+    <ul class="guide-list">
+      {GUIDES.map((g) => (
+        <li><a href={g.path}>
+          <img src={`/guide/img/${g.image}.webp`} alt="" width="1200" height="614" loading="lazy" />
+          <span><b>{g.title}</b><span class="muted">{g.description}</span></span>
+        </a></li>
+      ))}
+    </ul>
+
+    <p class="notice warn">考試資訊整理自 <a href={SRC.news[1]} rel="noopener">iPAS 官網</a>，以官方最新公告為準。本站是獨立經營的練習網站，不是 iPAS 官方網站。</p>
+    <div class="card cta">
+      <h2>準備好了嗎？</h2>
+      <p>依官方評鑑主題分科練習，或直接做一回計時模考。</p>
+      <div class="row"><a class="btn" href="/practice/">開始練習</a><a class="btn ghost" href="/plan/">排讀書計畫</a></div>
+    </div>
+  </article>
+</Base>

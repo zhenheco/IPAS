@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" font-family="system-ui,-apple-system,'PingFang TC','Noto Sans TC','Microsoft JhengHei',sans-serif" role="img" aria-labelledby="t">
+<title id="t">iPAS AI 應用規劃師初級與中級的應考科目與證書對照圖</title>
+<rect width="960" height="520" fill="#ffffff"/>
+<text x="40" y="52" font-size="26" font-weight="700" fill="#1d2330">AI 應用規劃師：考哪幾科、拿哪張證書</text>
+<text x="40" y="82" font-size="16" fill="#5d6677">依 115 年度簡章；每科單選題、電腦化測驗、滿分 100 分</text>
+<rect x="40" y="110" width="400" height="370" rx="16" fill="#f6f7f9" stroke="#dde1e8"/>
+<text x="64" y="150" font-size="22" font-weight="700" fill="#2456d6">初級 · 兩科都要考</text>
+<rect x="64" y="172" width="352" height="84" rx="12" fill="#fff" stroke="#2456d6" stroke-width="2"/>
+<text x="84" y="206" font-size="18" font-weight="700" fill="#1d2330">L11 人工智慧基礎概論</text>
+<text x="84" y="236" font-size="15" fill="#5d6677">75 分鐘</text>
+<rect x="64" y="272" width="352" height="84" rx="12" fill="#fff" stroke="#2456d6" stroke-width="2"/>
+<text x="84" y="306" font-size="18" font-weight="700" fill="#1d2330">L12 生成式 AI 應用與規劃</text>
+<text x="84" y="336" font-size="15" fill="#5d6677">75 分鐘</text>
+<rect x="64" y="384" width="352" height="72" rx="12" fill="#e3f5ec"/>
+<text x="84" y="414" font-size="17" font-weight="700" fill="#137a4a">初級證書（永久有效）</text>
+<text x="84" y="440" font-size="14" fill="#137a4a">每科 70 分；同梯兩科可平均 70 且各科 ≥ 60</text>
+<rect x="480" y="110" width="440" height="370" rx="16" fill="#f6f7f9" stroke="#dde1e8"/>
+<text x="504" y="150" font-size="22" font-weight="700" fill="#2456d6">中級 · 1 科必考 + 1 科選考</text>
+<rect x="504" y="172" width="392" height="84" rx="12" fill="#fff" stroke="#2456d6" stroke-width="2"/>
+<text x="524" y="206" font-size="18" font-weight="700" fill="#1d2330">L21 人工智慧技術應用與規劃</text>
+<text x="524" y="236" font-size="15" fill="#5d6677">必考 · 90 分鐘</text>
+<rect x="504" y="272" width="188" height="84" rx="12" fill="#fff" stroke="#d6a400" stroke-width="2"/>
+<text x="518" y="304" font-size="16" font-weight="700" fill="#1d2330">L22 大數據處理</text>
+<text x="518" y="326" font-size="16" font-weight="700" fill="#1d2330">分析與應用</text>
+<text x="518" y="346" font-size="13" fill="#5d6677">選考 · 90 分鐘</text>
+<rect x="708" y="272" width="188" height="84" rx="12" fill="#fff" stroke="#d6a400" stroke-width="2"/>
+<text x="722" y="304" font-size="16" font-weight="700" fill="#1d2330">L23 機器學習</text>
+<text x="722" y="326" font-size="16" font-weight="700" fill="#1d2330">技術與應用</text>
+<text x="722" y="346" font-size="13" fill="#5d6677">選考 · 90 分鐘</text>
+<text x="700" y="322" font-size="14" font-weight="700" fill="#d6a400" text-anchor="middle">或</text>
+<rect x="504" y="384" width="188" height="72" rx="12" fill="#e3f5ec"/>
+<text x="518" y="414" font-size="15" font-weight="700" fill="#137a4a">L21+L22 →</text>
+<text x="518" y="440" font-size="15" font-weight="700" fill="#137a4a">數據分析證書</text>
+<rect x="708" y="384" width="188" height="72" rx="12" fill="#e3f5ec"/>
+<text x="722" y="414" font-size="15" font-weight="700" fill="#137a4a">L21+L23 →</text>
+<text x="722" y="440" font-size="15" font-weight="700" fill="#137a4a">機器學習證書</text>
+<text x="40" y="506" font-size="13" fill="#5d6677">中級證書效期 5 年；兩科皆需 70 分。資料來源：iPAS 115 年度 AI 應用規劃師能力鑑定簡章。以官方最新公告為準。</text>
+</svg>

@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /api/
+
+Sitemap: https://ipas.zhenhe-co.com/sitemap-index.xml

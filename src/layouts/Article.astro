@@ -1,0 +1,40 @@
+---
+// 考試指南 article: Base + hero image + Article/Breadcrumb JSON-LD + sources + related guides + CTA.
+import Base from './Base.astro';
+import { FACTS_CHECKED, GUIDES, guideOf } from '../lib/guides';
+import { articleJsonLd, breadcrumbJsonLd } from '../lib/seo';
+interface Props { path: string; description?: string; sources: [label: string, url: string][]; jsonLd?: object[] }
+const { path, sources, jsonLd = [] } = Astro.props;
+const g = guideOf(path);
+const description = Astro.props.description ?? g.description;
+const image = `/guide/img/${g.image}.jpg`;
+const PUBLISHED = '2026-11-06';
+const ld = [
+  articleJsonLd({ title: g.title, description, path, image, published: PUBLISHED, modified: FACTS_CHECKED }),
+  breadcrumbJsonLd([['首頁', '/'], ['考試指南', '/guide/'], [g.title, path]]),
+  ...jsonLd,
+];
+const related = GUIDES.filter((x) => x.path !== path);
+---
+<Base title={g.title} description={description} ogType="article" image={image} jsonLd={ld}>
+  <article class="guide">
+    <nav class="crumbs muted" aria-label="麵包屑"><a href="/">首頁</a> › <a href="/guide/">考試指南</a> › {g.title}</nav>
+    <h1>{g.title}</h1>
+    <p class="muted">更新日期：<time datetime={FACTS_CHECKED}>{FACTS_CHECKED}</time>（考試資訊已對照 iPAS 官網）</p>
+    <picture>
+      <source srcset={`/guide/img/${g.image}.webp`} type="image/webp" />
+      <img class="hero" src={image} alt={g.alt} width="1200" height="614" fetchpriority="high" />
+    </picture>
+    <slot />
+    <p class="notice warn">本文整理自 iPAS 官網公告，考試日期、費用與規則以<a href="https://ipd.nat.gov.tw/ipas/certification/AIAP/news" rel="noopener">官方最新公告</a>為準。本站是獨立經營的練習網站，不是 iPAS 官方網站。</p>
+    <h2>資料來源</h2>
+    <ul class="sources">{sources.map(([label, url]) => <li><a href={url} rel="noopener">{label}</a></li>)}</ul>
+    <div class="card cta">
+      <h2>用模擬題檢驗準備進度</h2>
+      <p>依官方評鑑主題分科練習，交卷即看詳解，錯題自動收進錯題本。</p>
+      <div class="row"><a class="btn" href="/practice/">開始練習</a><a class="btn ghost" href="/full/">全真模考</a></div>
+    </div>
+    <h2>延伸閱讀</h2>
+    <ul class="related">{related.map((r) => <li><a href={r.path}>{r.title}</a></li>)}</ul>
+  </article>
+</Base>

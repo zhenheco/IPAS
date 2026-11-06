@@ -2,14 +2,19 @@
 import '../styles/global.css';
 import { adsenseScriptSrc } from '../lib/adsense';
 import { Contact } from '../components/Contact';
-const { title, noindex = false } = Astro.props;
+import { DEFAULT_OG_IMAGE, SITE_NAME, siteJsonLd } from '../lib/seo';
+const { title, description, noindex = false, ogType = 'website', image = DEFAULT_OG_IMAGE, jsonLd = [] } = Astro.props;
 const nav = [
-  ['/', '首頁'], ['/plan/', '讀書計畫'], ['/practice/', '練習'], ['/exam/', '單科模考'], ['/full/', '全真模考'],
+  ['/', '首頁'], ['/guide/', '考試指南'], ['/plan/', '讀書計畫'], ['/practice/', '練習'], ['/exam/', '單科模考'], ['/full/', '全真模考'],
   ['/wrongbook/', '錯題本'], ['/weakness/', '弱點分析'], ['/history/', '作答歷史'], ['/settings/', '設定'],
 ];
 // 價目與帳號 appear only once the owner builds with PUBLIC_PAYWALL_ENABLED=1
 if (import.meta.env.PUBLIC_PAYWALL_ENABLED === '1') nav.push(['/pricing/', '價目'], ['/account/', '帳號']);
 const path = Astro.url.pathname;
+const canonical = new URL(path, Astro.site).href;
+const fullTitle = `${title} | ${SITE_NAME}`;
+const imageUrl = new URL(image, Astro.site).href;
+const ld = [siteJsonLd(), ...jsonLd];
 const adsenseSrc = adsenseScriptSrc(import.meta.env.PUBLIC_ADSENSE_CLIENT);
 ---
 <!doctype html>
@@ -18,14 +23,29 @@ const adsenseSrc = adsenseScriptSrc(import.meta.env.PUBLIC_ADSENSE_CLIENT);
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     {noindex && <meta name="robots" content="noindex" />}
-    <title>{title} | iPAS AI 應用規劃師練習</title>
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:locale" content="zh_TW" />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={imageUrl} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
+    {ld.map((d) => <script type="application/ld+json" set:html={JSON.stringify(d)} />)}
     {adsenseSrc && <script is:inline async src={adsenseSrc} crossorigin="anonymous" data-adsbygoogle="1"></script>}
   </head>
   <body>
     <header class="top">
       <a class="brand" href="/">iPAS AI 應用規劃師 · 初級／中級</a>
       <nav aria-label="主選單">
-        {nav.map(([href, label]) => <a href={href} aria-current={path === href ? 'page' : undefined}>{label}</a>)}
+        {nav.map(([href, label]) => <a href={href} aria-current={path === href || (href === '/guide/' && path.startsWith(href)) ? 'page' : undefined}>{label}</a>)}
       </nav>
     </header>
     <main><slot /></main>

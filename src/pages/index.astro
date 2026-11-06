@@ -1,5 +1,15 @@
 ---
 import Base from '../layouts/Base.astro';
 import Home from '../components/Home.tsx';
+import { GUIDES } from '../lib/guides';
 ---
-<Base title="首頁"><Home client:only="preact" /></Base>
+<Base title="初級／中級免費題庫與模擬考" description="免費練習 iPAS AI 應用規劃師初級、中級模擬題：依官方評鑑主題分科練習、單科模考、全真模考、錯題本與弱點分析，附考試倒數與讀書計畫。">
+  <h1>iPAS AI 應用規劃師練習：初級、中級模擬題與模考</h1>
+  <Home client:only="preact" />
+  <section class="home-guides">
+    <h2>考試指南</h2>
+    <p class="muted">考前必讀：科目、報名日期與準備方法，依 iPAS 官方公告整理。</p>
+    <ul class="related">{GUIDES.map((g) => <li><a href={g.path}>{g.title}</a></li>)}</ul>
+    <p><a href="/guide/">看完整考試指南 →</a></p>
+  </section>
+</Base>

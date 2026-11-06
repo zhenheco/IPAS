@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@astrojs/preact": "^6.1.1",
+    "@astrojs/sitemap": "^3.7.4",
     "astro": "^7.4.5",
     "better-auth": "^1.7.16",
     "hono": "^4.13.16",
