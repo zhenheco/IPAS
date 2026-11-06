@@ -2,7 +2,8 @@
 import type { Fetcher, Response as CfResponse } from '@cloudflare/workers-types';
 import type { Env } from './env';
 
-export interface EmailMessage { to: string; subject: string; text: string; html: string }
+/** kind 用於冪等鍵與中繼 tags（預設 magic-link） */
+export interface EmailMessage { to: string; subject: string; text: string; html: string; kind?: string }
 export interface EmailSender { send(m: EmailMessage): Promise<void> }
 
 export class ConsoleEmailSender implements EmailSender {
@@ -27,13 +28,14 @@ export class CfEmailSender implements EmailSender {
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${m.to}\n${m.subject}\n${m.text}`));
     const hex = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
     // 主機名會被忽略，只有路徑有意義
+    const kind = m.kind ?? 'magic-link';
     let r: CfResponse;
     try {
       r = await this.cf.fetch('https://cf-email/send', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-API-Key': this.apiKey, 'Idempotency-Key': `ipas:magic-link:${hex}` },
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': this.apiKey, 'Idempotency-Key': `ipas:${kind}:${hex}` },
         // v1 body：已部署的中繼會拒絕 v2
-        body: JSON.stringify({ to: m.to, from: this.from, subject: m.subject, text: m.text, html: m.html, tags: ['ipas', 'magic-link'] }),
+        body: JSON.stringify({ to: m.to, from: this.from, subject: m.subject, text: m.text, html: m.html, tags: ['ipas', kind] }),
       });
     } catch {
       throw new Error('cf-email 呼叫失敗');
@@ -85,5 +87,17 @@ export function magicLinkEmail(to: string, url: string): EmailMessage {
     subject: '登入 iPAS AI 應用規劃師練習',
     text: `請點下列連結登入（5 分鐘內有效）：\n${url}\n\n若您沒有要求登入，請忽略這封信。`,
     html: `<p>請點下列連結登入（5 分鐘內有效）：</p><p><a href="${escHtml(url)}">登入 iPAS 練習</a></p><p>若您沒有要求登入，請忽略這封信。</p>`,
+  };
+}
+
+/** 聯絡表單寄給站長的信。中繼 v1 不支援 reply-to，訪客 email 放在主旨與內文。 */
+export function contactEmail(to: string, from: string, message: string, page?: string): EmailMessage {
+  const where = page ? `\n頁面：${page}` : '';
+  return {
+    to,
+    kind: 'contact',
+    subject: `[iPAS 聯絡] ${from}`,
+    text: `來自：${from}${where}\n\n${message}`,
+    html: `<p>來自：${escHtml(from)}${page ? `<br>頁面：${escHtml(page)}` : ''}</p><pre style="white-space:pre-wrap;font:inherit">${escHtml(message)}</pre>`,
   };
 }

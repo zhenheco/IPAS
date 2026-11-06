@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { adsenseScriptSrc } from '../lib/adsense';
+import { Contact } from '../components/Contact';
 const { title, noindex = false } = Astro.props;
 const nav = [
   ['/', '首頁'], ['/plan/', '讀書計畫'], ['/practice/', '練習'], ['/exam/', '單科模考'], ['/full/', '全真模考'],
@@ -34,5 +35,6 @@ const adsenseSrc = adsenseScriptSrc(import.meta.env.PUBLIC_ADSENSE_CLIENT);
       <a href="/privacy/">隱私權政策</a>
       <p>評鑑主題與學習範圍參考：經濟部產業人才能力鑑定（iPAS）官網公告之評鑑內容（初級依 115 年度簡章 0410 版核對；以官方最新公告為準）</p>
     </footer>
+    <Contact client:idle />
   </body>
 </html>

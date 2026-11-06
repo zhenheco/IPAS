@@ -29,6 +29,8 @@
   ],
   // 同帳號的 cf-email Worker 必須走 service binding；直接 fetch workers.dev 網址會得到 error code: 1042
   "services": [{ "binding": "CF_EMAIL", "service": "cf-email" }],
+  // /api/contact 每個 IP 每 60 秒最多 3 次（namespace_id 為本帳號內自訂的整數字串）
+  "ratelimits": [{ "name": "CONTACT_LIMITER", "namespace_id": "1001", "simple": { "limit": 3, "period": 60 } }],
   "vars": {
     "BETTER_AUTH_URL": "https://ipas.zhenhe-co.com",
     // 收款經 zhenheco affiliate 金流微服務（本站不直接呼叫 PAYUNi）；金鑰與 webhook 秘密見 docs/payments.md

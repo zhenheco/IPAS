@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { CfEmailSender, ConsoleEmailSender, emailSenderFromEnv, magicLinkEmail } from './email';
+import { CfEmailSender, ConsoleEmailSender, contactEmail, emailSenderFromEnv, magicLinkEmail } from './email';
 
 const fetcher = (res: Response) => {
   const fetch = vi.fn(async (_u: string, _i: RequestInit) => res.clone());
@@ -22,6 +22,14 @@ describe('CfEmailSender', () => {
     expect(JSON.parse(init.body as string)).toEqual({
       to: 'a@example.com', from: 'no-reply@zhenhe-co.com', subject: msg.subject, text: msg.text, html: msg.html, tags: ['ipas', 'magic-link'],
     });
+  });
+
+  it('uses the message kind in idempotency key and tags', async () => {
+    const f = fetcher(ok());
+    await new CfEmailSender(f, 'KEY', 'no-reply@zhenhe-co.com').send(contactEmail('o@example.com', 'v@example.com', 'hi'));
+    const [, init] = f.fetch.mock.calls[0];
+    expect((init.headers as Record<string, string>)['Idempotency-Key']).toMatch(/^ipas:contact:[0-9a-f]{64}$/);
+    expect(JSON.parse(init.body as string).tags).toEqual(['ipas', 'contact']);
   });
 
   it('idempotency key is stable for identical messages and differs for different ones', async () => {

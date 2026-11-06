@@ -103,7 +103,7 @@ summary { cursor: pointer; }
 .legal ul, .legal ol { padding-left: 1.4em; }
 .legal li { margin: 6px 0; }
 .legal table { margin-top: 8px; }
-.site-foot { max-width: 860px; margin: 0 auto; padding: 0 16px 32px; display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: .92rem; }
+.site-foot { max-width: 860px; margin: 0 auto; padding: 0 16px 72px; display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: .92rem; }
 .site-foot a { color: var(--muted); }
 .site-foot p { flex-basis: 100%; margin: 0; color: var(--muted); font-size: .85rem; }
 
@@ -123,3 +123,12 @@ td:first-child { white-space: normal; }
 .plandays { padding-left: 1.2em; }
 .plandays > li { margin: 8px 0; }
 .plandays ul { margin: 2px 0 0; padding-left: 1.2em; color: var(--muted); }
+.contact-fab { position: fixed; right: 16px; bottom: 16px; z-index: 50; border-radius: 999px; box-shadow: 0 4px 14px rgb(0 0 0 / .2); }
+@media print { .contact-fab { display: none; } }
+.contact-dlg { width: min(440px, calc(100vw - 32px)); border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); padding: 20px; }
+.contact-dlg::backdrop { background: rgb(0 0 0 / .4); }
+.contact-dlg h2 { margin-top: 0; }
+.contact-dlg input, .contact-dlg textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 4px; font: inherit; font-weight: 400; padding: 9px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+.contact-dlg .row { display: flex; justify-content: flex-end; gap: 8px; }
+.contact-dlg .err { color: var(--bad); }
+.contact-dlg .hp { position: absolute; left: -9999px; }

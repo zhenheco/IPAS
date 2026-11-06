@@ -9,7 +9,7 @@ import { Hono, type Context } from 'hono';
 import { z } from 'zod';
 import { createAuth, type Auth } from './auth';
 import { d1Store, type Store } from './db';
-import { emailSenderFromEnv, type EmailSender } from './email';
+import { contactEmail, emailSenderFromEnv, type EmailSender } from './email';
 import type { Env } from './env';
 import { createOrder, fulfilPayment, getMe, listOffers, markRefunded, recordPaidFeatureUse, requestRefund } from './orders';
 import { checkoutHtml, paymentClient } from './payment';
@@ -33,6 +33,15 @@ const MAX_SYNC_BYTES = 10 * 1024 * 1024;
 const checkoutSchema = z.object({ sittingId: z.string().min(1).max(100), consent: z.literal(true) });
 const refundSchema = z.object({ orderId: z.string().min(1).max(100), reason: z.string().max(500).optional() });
 const usageSchema = z.object({ level: z.enum(['beginner', 'intermediate']), feature: z.enum(PAID_USE_FEATURES) });
+
+const CONTACT_TO = 'ace@zhenheai.com';
+// website 是 honeypot：真人看不到，機器人會填
+const contactSchema = z.object({
+  email: z.string().trim().email().max(200),
+  message: z.string().trim().min(1).max(2000),
+  page: z.string().max(200).optional(),
+  website: z.string().optional(),
+});
 
 const truthy = (v: unknown) => v === true || v === 'on' || v === 'true' || v === '1';
 
@@ -134,6 +143,22 @@ export function createApp(deps: AppDeps = {}) {
     if (!p.success) return c.json({ error: 'bad_request' }, 400);
     const r = await requestRefund(c.var.ctx.store, { userId: u.id, orderId: p.data.orderId, reason: p.data.reason ?? null, now: now() });
     return r.ok ? c.json({ ok: true }) : c.json({ error: r.error }, r.error === 'order_not_found' ? 404 : 409);
+  });
+
+  app.post('/api/contact', async (c) => {
+    if (!sameOrigin(c)) return c.json({ error: 'bad_origin' }, 403);
+    const p = contactSchema.safeParse(await c.req.json().catch(() => null));
+    if (!p.success) return c.json({ error: 'bad_request' }, 400);
+    if (p.data.website) return c.json({ ok: true });
+    const ip = c.req.header('cf-connecting-ip') ?? 'unknown';
+    if (c.env.CONTACT_LIMITER && !(await c.env.CONTACT_LIMITER.limit({ key: ip })).success) return c.json({ error: 'rate_limited' }, 429);
+    try {
+      await (deps.mailer ?? emailSenderFromEnv)(c.env).send(contactEmail(CONTACT_TO, p.data.email, p.data.message, p.data.page));
+    } catch (e) {
+      console.error(`[contact] ${(e as Error).message}`);
+      return c.json({ error: 'send_failed' }, 502);
+    }
+    return c.json({ ok: true });
   });
 
   app.post('/api/usage/paid-feature', async (c) => {

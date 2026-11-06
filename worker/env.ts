@@ -24,4 +24,6 @@ export interface Env {
   CF_EMAIL_API_KEY?: string;
   /** 逗號分隔；可呼叫 /api/admin/* 的管理者 email */
   ADMIN_EMAILS?: string;
+  /** Workers Rate Limiting binding（wrangler.app.jsonc ratelimits）；未綁定時不限流 */
+  CONTACT_LIMITER?: { limit(o: { key: string }): Promise<{ success: boolean }> };
 }
